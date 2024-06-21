@@ -1,33 +1,27 @@
 package main
 
 import (
-	"log"
-	"os"
-	"strconv"
+	"github.com/CESSProject/watchdog/internal/service"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"time"
-
-	"github.com/CESSProject/watchdog/client"
 )
 
 func main() {
-
-	if len(os.Args) < 2 {
-		log.Fatal("No URL entered")
+	service.Init()
+	router := gin.Default()
+	config := cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}
-	url := os.Args[1]
-	err := client.InitWatchdogClient()
+	router.Use(cors.New(config))
+	service.RegisterRoutes(router)
+	err := router.Run(":13090")
 	if err != nil {
-		log.Fatal("init watchdog error", err)
+		return
 	}
-
-	var freq time.Duration
-	if len(os.Args) >= 3 {
-		d, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			log.Fatal("error parsing second parameter")
-		}
-		freq = time.Duration(d)
-	}
-	err = client.RunWatchdogClient(url, freq)
-	log.Println("failed to launch program", err)
 }

@@ -1,0 +1,15 @@
+Name: miner1
+Port: 15001
+EarningsAcc: cXjmhVMVak1mFG3jgK2Nj9KG6HAo41vH5uZzCS7gKV9g5Rfpb
+StakingAcc: cXhLrzUA1BVu9HmDFZKWLKDJvvFk4fmy2JTvRGGNvD4qN4ura
+Mnemonic: profit upset peasant fit table lawn unusual insect paper garbage awake edit
+Rpc:
+  - 'ws://8.210.223.137:9947/'
+UseSpace: 50
+Workspace: /opt/miner-disk
+UseCpu: 1
+TeeList:
+  - '127.0.0.1:8080'
+  - '127.0.0.1:8081'
+Boot:
+  - _dnsaddr.boot-miner-devnet.cess.cloud

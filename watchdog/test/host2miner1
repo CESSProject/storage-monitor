@@ -1,0 +1,16 @@
+Name: miner1
+Port: 15001
+EarningsAcc: cXjmhVMVak1mFG3jgK2Nj9KG6HAo41vH5uZzCS7gKV9g5Rfpb
+StakingAcc: cXgrD4Q7TZ8E66VBUeYHcHUbE5tH7J2pMcxTk7Svs1tN3F1xw
+Mnemonic: >-
+  before park picture veteran pumpkin sweet raise swing solution budget quit home
+Rpc:
+  - 'ws://8.210.223.137:9947/'
+UseSpace: 50
+Workspace: /opt/miner-disk
+UseCpu: 1
+TeeList:
+  - '127.0.0.1:8080'
+  - '127.0.0.1:8081'
+Boot:
+  - _dnsaddr.boot-miner-devnet.cess.cloud

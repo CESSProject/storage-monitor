@@ -1,0 +1,27 @@
+scrapeInterval: 10000
+hosts:
+  # set ca_path/cert_path/key_path to empty string "" if the ip belongs to intranet[ 127.0.0.1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ],
+  - ip: "127.0.0.1"
+    port: "2375"
+    ca_path: ""
+    cert_path: ""
+    key_path: ""
+  # connect to docker use tls in internet
+  - ip: "1.1.1.1"
+    port: "2375"
+    ca_path: "/etc/docker/127.0.0.1/ca.pem"
+    cert_path: "/etc/docker/127.0.0.1/cert.pem"
+    key_path: "/etc/docker/127.0.0.1/key.pem"
+alert:
+  enable: true
+  webhook:
+    - https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+    - https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_WEBHOOK_URL>
+  email:
+    smtp_endpoint: email-smtp.us-west-1.amazonaws.com
+    smtp_port: 80
+    smtp_account: myservice@cess.cloud
+    smtp_password: my_pwd
+    receive_addr:
+      - "example1@gmail.com"
+      - "example2@gmail.com"

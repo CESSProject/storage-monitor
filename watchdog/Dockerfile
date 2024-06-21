@@ -5,7 +5,7 @@ ARG go_proxy
 ENV GOPROXY ${go_proxy}
 
 # Workdir
-WORKDIR /opt/target
+WORKDIR /opt/monitor
 
 # Copy file
 COPY . .
@@ -14,6 +14,5 @@ RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' -gcflags '-N
 
 # Run
 FROM alpine:3.18 AS runner
-WORKDIR /opt/server
-COPY --from=builder /opt/target/watchdog ./watchdog
+COPY --from=builder /opt/monitor/watchdog ./watchdog
 ENTRYPOINT ["./watchdog"]
