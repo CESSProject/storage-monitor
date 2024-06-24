@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"sort"
 )
 
 func healthCheck(c *gin.Context) {
@@ -54,4 +55,52 @@ func update(c *gin.Context) {
 		log.Fatalf("Fail to save /opt/cess/mineradm/config.yaml")
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "update conf success"})
+}
+
+type MinerInfoVO struct {
+	Host          string
+	MinerInfoList []core.MinerInfo
+}
+
+func getListByCondition(hostIp string) []MinerInfoVO {
+	var res []MinerInfoVO
+	if hostIp != "" {
+		if _, ok := core.Clients[hostIp]; ok {
+			VO := MinerInfoVO{
+				Host:          hostIp,
+				MinerInfoList: getMinersListByClientInfo(core.Clients[hostIp].MinerInfoMap),
+			}
+			for minerName, _ := range VO.MinerInfoList {
+				VO.MinerInfoList[minerName].Conf.Mnemonic = ""
+			}
+			res = make([]MinerInfoVO, 0)
+			res = append(res, VO)
+			sort.Slice(res, func(i, j int) bool {
+				return res[i].Host < res[j].Host
+			})
+		} else {
+			log.Println("Host IP not found: ", hostIp)
+		}
+	} else {
+		res = make([]MinerInfoVO, 0)
+		for k, v := range core.Clients {
+			VO := MinerInfoVO{
+				Host:          k,
+				MinerInfoList: getMinersListByClientInfo(v.MinerInfoMap),
+			}
+			res = append(res, VO)
+		}
+		sort.Slice(res, func(i, j int) bool {
+			return res[i].Host < res[j].Host
+		})
+	}
+	return res
+}
+
+func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.MinerInfo {
+	var minerInfoArray []core.MinerInfo
+	for _, minerInfo := range minerMap {
+		minerInfoArray = append(minerInfoArray, *minerInfo)
+	}
+	return minerInfoArray
 }

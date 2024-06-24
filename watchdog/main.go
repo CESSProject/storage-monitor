@@ -1,14 +1,14 @@
 package main
 
 import (
+	"github.com/CESSProject/watchdog/internal/core"
 	"github.com/CESSProject/watchdog/internal/service"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 func main() {
-	service.Init()
+	core.Run()
 	router := gin.Default()
 	config := cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -16,7 +16,6 @@ func main() {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
 	}
 	router.Use(cors.New(config))
 	service.RegisterRoutes(router)
