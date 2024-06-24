@@ -46,16 +46,20 @@ func NewClient(host model.HostItem) (*Client, error) {
 		}
 		return &Client{cli}, nil
 	} else {
-		cli, err := client.NewClientWithOpts(
-			client.WithHost(dockerHost),
-			client.WithTLSClientConfig(host.CAPath, host.CertPath, host.KeyPath),
-			client.WithAPIVersionNegotiation(),
-		)
-		if err != nil {
-			log.Fatal(err)
-			return nil, err
+		if host.CAPath == "" || host.CertPath == "" || host.KeyPath == "" {
+			return nil, nil
+		} else {
+			cli, err := client.NewClientWithOpts(
+				client.WithHost(dockerHost),
+				client.WithTLSClientConfig(host.CAPath, host.CertPath, host.KeyPath),
+				client.WithAPIVersionNegotiation(),
+			)
+			if err != nil {
+				log.Println(host, ": Error when init a tls docker cli.", err)
+				return nil, err
+			}
+			return &Client{cli}, nil
 		}
-		return &Client{cli}, nil
 	}
 }
 
@@ -88,7 +92,7 @@ func (cli *Client) ListContainers() ([]model.Container, error) {
 	return containers, nil
 }
 
-func (cli *Client) ContainerStats(ctx context.Context, cid string) (model.ContainerStat, error) {
+func (cli *Client) SetContainerStats(ctx context.Context, cid string) (model.ContainerStat, error) {
 	response, err := cli.dockerCli.ContainerStats(ctx, cid, false)
 	if err != nil {
 		return model.ContainerStat{}, nil
@@ -97,7 +101,7 @@ func (cli *Client) ContainerStats(ctx context.Context, cid string) (model.Contai
 	decoder := json.NewDecoder(response.Body)
 
 	if err := decoder.Decode(&v); err == io.EOF {
-		log.Fatalf("Docker Stats API Response io.EOF")
+		log.Fatalf("Docker Container Stats API Response io.EOF")
 		return model.ContainerStat{}, nil
 	} else if err != nil {
 		panic(err)
