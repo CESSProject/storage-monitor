@@ -50,9 +50,12 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 		go func(idx int, host model.HostItem) {
 			defer wg.Done()
 			dockerClient, err := NewClient(host)
+			if dockerClient == nil {
+				return
+			}
 			if err != nil {
 				errChan <- err
-				log.Fatal("Fail to create docker api client: ", host.IP)
+				log.Println("Fail to create docker api client: ", host.IP)
 				return
 			}
 			log.Println("Create a docker client success, host ip: ", host.IP)
@@ -75,8 +78,10 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 
 func RunWatchdogClients(conf model.YamlConfig) error {
 	for hostIp, client := range Clients {
-		log.Println("Start to run ", hostIp, " client: ", client.dockerCli)
-		go client.RunWatchdogClient(conf)
+		if client != nil {
+			log.Println("Start to run ", hostIp, " client: ", client.dockerCli)
+			go client.RunWatchdogClient(conf)
+		}
 	}
 	return nil
 }
@@ -86,7 +91,7 @@ func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
 	for {
 		err := cli.setMinerData(conf)
 		if err != nil {
-			log.Fatal("Error when get miner data: ", err)
+			log.Fatal("Error when scrape miner data: ", err)
 		}
 		time.Sleep(time.Duration(interval) * time.Second) // scrape interval
 	}
@@ -99,33 +104,58 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 		errChan <- err
 		log.Fatal(cli.Host, ": error when list containers")
 	}
+
 	// get miner info and miner config
+	var SetContainersDataWG sync.WaitGroup
 	for _, container := range containers {
 		if !strings.Contains(container.Image, constant.MinerImage) {
 			continue
 		}
 		log.Println("Task: Start: ", cli.Host, ", Miner name: ", container.Name)
-		err = cli.InitMinerInfoMap(container)
-		if err != nil {
-			errChan <- err
-			log.Fatal(cli.Host, ": error when init miner info map.", err)
-		}
+		SetContainersDataWG.Add(1)
+		go func(container model.Container) {
+			defer SetContainersDataWG.Done()
+			err = cli.SetContainerData(container)
+			if err != nil {
+				errChan <- err
+				log.Println(cli.Host, ": error when scrape miners container data.", err)
+			}
+		}(container)
 	}
+	SetContainersDataWG.Wait()
+
 	// set miners' container stats
-	for name, miner := range cli.MinerInfoMap {
-		res, err := cli.ContainerStats(context.Background(), miner.CInfo.ID)
-		miner.CInfo.CPUPercent = res.CPUPercent
-		miner.CInfo.MemoryPercent = res.MemoryPercent
-		miner.CInfo.MemoryUsage = res.MemoryUsage
-		if err != nil {
-			errChan <- err
-			log.Fatal(miner.Name, " get container stats failed")
-		}
-		// get miner's info on chain
-		miner.MinerStat, _ = QueryMinerStatOnChain(miner.AccountId, miner.Conf.Rpc, miner.Conf.Mnemonic, interval)
-		cli.MinerInfoMap[name].MinerStat = miner.MinerStat
-		log.Println("Task: Done: ", cli.Host, ", Miner name: ", name)
+	var SetContainersStatsDataWG sync.WaitGroup
+	for _, miner := range cli.MinerInfoMap {
+		SetContainersStatsDataWG.Add(1)
+		go func(m *MinerInfo) {
+			defer SetContainersStatsDataWG.Done()
+			res, err := cli.SetContainerStats(context.Background(), m.CInfo.ID)
+			if err != nil {
+				errChan <- err
+				log.Println(cli.Host, ": error when scrape miners container data.", err)
+				return
+			}
+			m.CInfo.CPUPercent = res.CPUPercent
+			m.CInfo.MemoryPercent = res.MemoryPercent
+			m.CInfo.MemoryUsage = res.MemoryUsage
+		}(miner)
 	}
+	SetContainersStatsDataWG.Wait()
+
+	// set miner's info on chain
+	var SetChainDataWG sync.WaitGroup
+	for _, miner := range cli.MinerInfoMap {
+		SetChainDataWG.Add(1)
+		go func(m *MinerInfo) {
+			defer SetChainDataWG.Done()
+			m.MinerStat, _ = SetChainData(m.AccountId, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
+			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
+			log.Println("Task: Done: ", cli.Host, ", Miner name: ", m.Name)
+		}(miner)
+	}
+	SetChainDataWG.Wait()
+
 	close(errChan)
 	for err := range errChan {
 		if err != nil {
@@ -135,7 +165,7 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 	return nil
 }
 
-func (cli *WatchdogClient) InitMinerInfoMap(cinfo model.Container) error {
+func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 	res, err := cli.ExeCommand(cinfo.ID, exeConf)
 	if err != nil {
 		log.Println(cinfo.Name, " read config from /opt/miner/config.yaml failed in host: ", cli.Host)
