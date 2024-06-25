@@ -30,11 +30,11 @@ func Run() {
 	log.Println("Service run with Host: ", CustomConfig.Hosts)
 	err = InitWatchdogClients(CustomConfig)
 	if err != nil {
-		log.Fatal("Init docker clients failed: ", err)
+		log.Fatal("Init CESS Node Monitor Service Failed: ", err)
 	}
 	err = RunWatchdogClients(CustomConfig)
 	if err != nil {
-		log.Fatal("Run docker clients failed", err)
+		log.Fatal("Run CESS Node Monitor failed", err)
 		return
 	}
 }
