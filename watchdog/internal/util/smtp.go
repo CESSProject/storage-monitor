@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/model"
+	"gopkg.in/gomail.v2"
 	"log"
-	"net/smtp"
-	"strconv"
 	"text/template"
 )
 
@@ -19,7 +18,7 @@ type SmtpConfig struct {
 }
 
 func (conf *SmtpConfig) SendMail(content model.AlertContent) (err error) {
-	auth := smtp.PlainAuth("", conf.SenderAddr, conf.SmtpPassword, conf.SmtpUrl)
+
 	t, err := template.ParseFiles("./internal/util/template.html")
 	if err != nil {
 		log.Println("Error parsing template:", err)
@@ -31,16 +30,22 @@ func (conf *SmtpConfig) SendMail(content model.AlertContent) (err error) {
 		log.Println("Error executing template:", err)
 		return err
 	}
-	subject := "Subject: Storage Miner Status Alert!"
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	msg := []byte(subject + mime + body.String())
+	m := gomail.NewMessage()
+	m.SetHeader("From", conf.SenderAddr)
+
+	m.SetHeader("Subject: Storage Miner Status Alert!")
+	m.SetBody("text/html", body.String())
+	d := gomail.NewDialer(conf.SmtpUrl, 80, conf.SenderAddr, conf.SmtpPassword)
 	for i := 0; i < constant.HttpMaxRetry; i++ {
-		err = smtp.SendMail(conf.SmtpUrl+":"+strconv.Itoa(conf.SmtpPort), auth, conf.SenderAddr, conf.Receiver, msg)
-		if err != nil {
-			log.Printf("Fail when send email: %v, retrying (%d/%d)\n", err, i+1, constant.HttpMaxRetry)
-		} else {
-			break
+		for _, receiver := range conf.Receiver {
+			m.SetHeader("To", receiver)
+			if err := d.DialAndSend(m); err != nil {
+				log.Printf("Fail when send email: %v, retrying (%d/%d)\n", err, i+1, constant.HttpMaxRetry)
+			} else {
+				break
+			}
 		}
+
 	}
 	return
 }
