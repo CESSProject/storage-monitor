@@ -43,19 +43,18 @@ type MinerInfo struct {
 func InitWatchdogClients(conf model.YamlConfig) error {
 	hosts := conf.Hosts
 	Clients = make(map[string]*WatchdogClient, len(hosts))
-	var wg sync.WaitGroup
+	var initClientsWG sync.WaitGroup
 	errChan := make(chan error, len(hosts))
 	for idx, host := range hosts {
-		wg.Add(1)
+		initClientsWG.Add(1)
 		go func(idx int, host model.HostItem) {
-			defer wg.Done()
+			defer initClientsWG.Done()
 			dockerClient, err := NewClient(host)
 			if dockerClient == nil {
 				return
 			}
 			if err != nil {
 				errChan <- err
-				log.Println("Fail to create docker api client: ", host.IP)
 				return
 			}
 			log.Println("Create a docker client success, host ip: ", host.IP)
@@ -66,7 +65,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 			}
 		}(idx, host)
 	}
-	wg.Wait()
+	initClientsWG.Wait()
 	close(errChan)
 	for err := range errChan {
 		if err != nil {
@@ -106,15 +105,15 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 	}
 
 	// get miner info and miner config
-	var SetContainersDataWG sync.WaitGroup
+	var setContainersDataWG sync.WaitGroup
 	for _, container := range containers {
 		if !strings.Contains(container.Image, constant.MinerImage) {
 			continue
 		}
 		log.Println("Task: Start: ", cli.Host, ", Miner name: ", container.Name)
-		SetContainersDataWG.Add(1)
+		setContainersDataWG.Add(1)
 		go func(container model.Container) {
-			defer SetContainersDataWG.Done()
+			defer setContainersDataWG.Done()
 			err = cli.SetContainerData(container)
 			if err != nil {
 				errChan <- err
@@ -122,14 +121,14 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 			}
 		}(container)
 	}
-	SetContainersDataWG.Wait()
+	setContainersDataWG.Wait()
 
 	// set miners' container stats
-	var SetContainersStatsDataWG sync.WaitGroup
+	var setContainersStatsDataWG sync.WaitGroup
 	for _, miner := range cli.MinerInfoMap {
-		SetContainersStatsDataWG.Add(1)
+		setContainersStatsDataWG.Add(1)
 		go func(m *MinerInfo) {
-			defer SetContainersStatsDataWG.Done()
+			defer setContainersStatsDataWG.Done()
 			res, err := cli.SetContainerStats(context.Background(), m.CInfo.ID)
 			if err != nil {
 				errChan <- err
@@ -141,20 +140,20 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 			m.CInfo.MemoryUsage = res.MemoryUsage
 		}(miner)
 	}
-	SetContainersStatsDataWG.Wait()
+	setContainersStatsDataWG.Wait()
 
 	// set miner's info on chain
-	var SetChainDataWG sync.WaitGroup
+	var setChainDataWG sync.WaitGroup
 	for _, miner := range cli.MinerInfoMap {
-		SetChainDataWG.Add(1)
+		setChainDataWG.Add(1)
 		go func(m *MinerInfo) {
-			defer SetChainDataWG.Done()
+			defer setChainDataWG.Done()
 			m.MinerStat, _ = SetChainData(m.AccountId, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
 			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
 			log.Println("Task: Done: ", cli.Host, ", Miner name: ", m.Name)
 		}(miner)
 	}
-	SetChainDataWG.Wait()
+	setChainDataWG.Wait()
 
 	close(errChan)
 	for err := range errChan {
@@ -168,8 +167,8 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 	res, err := cli.ExeCommand(cinfo.ID, exeConf)
 	if err != nil {
-		log.Println(cinfo.Name, " read config from /opt/miner/config.yaml failed in host: ", cli.Host)
-		return errors.Wrap(err, "error when get miner's configuration at /opt/miner/config.yaml.")
+		log.Println(cinfo.Name, ": read config from /opt/miner/config.yaml failed in host: ", cli.Host)
+		return errors.Wrap(err, "error when get miner's configuration at /opt/miner/config.yaml")
 	}
 
 	// res:
@@ -187,20 +186,20 @@ func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 
 	// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
 	//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
-
+	log.Println("Host: ", cli.Host, " miner: ", cinfo.Name, " start to parse /opt/miner/config.yaml")
 	conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
 	if err != nil {
-		return errors.Wrap(err, " error when parse /opt/miner/config.yaml.")
+		return err
 	}
 
 	key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
 	if err != nil {
-		return errors.Wrap(err, "error when get miner's mnemonic")
+		return err
 	}
 
 	acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
 	if err != nil {
-		return errors.Wrap(err, "error when get miner's signature account.")
+		return err
 	}
 
 	info := MinerInfo{
