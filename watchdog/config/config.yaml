@@ -1,17 +1,15 @@
+# 30 <= scrapeInterval <= 600
 scrapeInterval: 10000
 hosts:
-  # set ca_path/cert_path/key_path to empty string "" if the ip belongs to intranet[ 127.0.0.1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ],
-  - ip: "127.0.0.1"
-    port: "2375"
-    ca_path: ""
-    cert_path: ""
-    key_path: ""
-  # connect to docker use tls in internet
-  - ip: "1.1.1.1"
-    port: "2375"
-    ca_path: "/etc/docker/127.0.0.1/ca.pem"
-    cert_path: "/etc/docker/127.0.0.1/cert.pem"
-    key_path: "/etc/docker/127.0.0.1/key.pem"
+  - ip: 127.0.0.1
+    port: 2375
+  # connect to docker use tls
+  # set ca_path/cert_path/key_path if the ip no belongs to intranet[ 127.x, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ]
+  - ip: 1.1.1.1
+    port: 2375
+    ca_path: /etc/docker/127.0.0.1/ca.pem
+    cert_path: /etc/docker/127.0.0.1/cert.pem
+    key_path: /etc/docker/127.0.0.1/key.pem
 alert:
   enable: true
   webhook:

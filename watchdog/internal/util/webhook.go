@@ -3,36 +3,57 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/model"
 	"log"
 	"net/http"
 )
 
-func sendAlertToWebhook(webhookURL, message string) error {
-	msg := model.WebhookContent{
-		MsgType: "text",
+type WebhookConfig struct {
+	Webhooks []string
+}
+
+func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err error) {
+	jsonContent, err := json.Marshal(content)
+	for i := 0; i < len(conf.Webhooks); i++ {
+		req, err := http.NewRequest("POST", conf.Webhooks[i], bytes.NewBuffer(jsonContent))
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			log.Fatal("Failed to create new http request client")
+			return err
+		}
+		go func() {
+			err := sendRequest(req)
+			if err != nil {
+				return
+			}
+		}()
 	}
-	msg.Content.Text = message
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatal("Encode webhook content failed")
-		return err
-	}
-	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(msgBytes))
-	if err != nil {
-		log.Fatal("Failed to create new http request")
-		return err
-	}
+	return nil
+}
+
+func sendRequest(req *http.Request) error {
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal("Failed to send a http post request")
-		return err
+	for j := 0; j < constant.HttpMaxRetry; j++ {
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Fail when request to webhook: %v, retrying (%d/%d)\n", err, j+1, constant.HttpMaxRetry)
+		} else {
+			if resp.StatusCode != http.StatusOK {
+				log.Println("Unexceptional response status code: ", resp.StatusCode)
+			}
+			err := resp.Body.Close()
+			if err != nil {
+				return err
+			}
+			break
+		}
+		err = resp.Body.Close()
+		if err != nil {
+			return err
+		}
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Unexceptional response status code: ", resp.StatusCode)
-	}
+
 	return nil
 }

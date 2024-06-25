@@ -1,29 +1,18 @@
 package model
 
-import (
-	"math/big"
-)
-
 type HostItem struct {
-	IP       string `yaml:"ip,omitempty"`        // host ip
-	Port     string `yaml:"port,omitempty"`      // docker api port
+	IP       string `yaml:"ip"`                  // host ip
+	Port     string `yaml:"port"`                // docker api port
 	CAPath   string `yaml:"ca_path,omitempty"`   // /etc/docker/127.0.0.1/ca.pem
 	CertPath string `yaml:"cert_path,omitempty"` // /etc/docker/127.0.0.1/cert.pem
 	KeyPath  string `yaml:"key_path,omitempty"`  // /etc/docker/127.0.0.1/key.pem
 }
 
-type MailContent struct {
+type AlertContent struct {
 	AlertTime     string
 	HostIp        string
 	ContainerName string
 	Description   string
-}
-
-type WebhookContent struct {
-	MsgType string `json:"msg_type"`
-	Content struct {
-		Text string `json:"text"`
-	} `json:"content"`
 }
 
 type Container struct {
@@ -49,16 +38,16 @@ type ContainerStat struct {
 
 type MinerStat struct {
 	PeerId           string   `json:"peer_id"`
-	Collaterals      *big.Int `json:"collaterals"`
-	Debt             *big.Int `json:"debt"`
+	Collaterals      string   `json:"collaterals"`
+	Debt             string   `json:"debt"`
 	Status           string   `json:"status"`            // positive, exit, frozen, unready(register on chain but no get a tag from tee)
-	DeclarationSpace *big.Int `json:"declaration_space"` // unit: TiB
-	IdleSpace        *big.Int `json:"idle_space"`
-	ServiceSpace     *big.Int `json:"service_space"`
-	LockSpace        *big.Int `json:"lock_space"` // upload file allocated to this miner but not get a proof from tee yet, it can be serviceSpace after get proof from tee
+	DeclarationSpace string   `json:"declaration_space"` // unit: TiB
+	IdleSpace        string   `json:"idle_space"`
+	ServiceSpace     string   `json:"service_space"`
+	LockSpace        string   `json:"lock_space"` // upload file allocated to this miner but not get a proof from tee yet, it can be serviceSpace after get proof from tee
 	IsPunished       [][]bool `json:"is_punished"`
-	TotalReward      *big.Int `json:"total_reward"`
-	RewardIssued     *big.Int `json:"reward_issued"`
+	TotalReward      string   `json:"total_reward"`
+	RewardIssued     string   `json:"reward_issued"`
 }
 
 type MinerConfigFile struct {
@@ -83,8 +72,8 @@ type YamlConfig struct {
 		Webhook []string `yaml:"webhook"`
 		Email   struct {
 			SmtpEndpoint string   `yaml:"smtp_endpoint"`
-			SmtpPort     string   `yaml:"smtp_port"`
-			SenderAddr   string   `yaml:"sender_addr"`
+			SmtpPort     int      `yaml:"smtp_port"`
+			SenderAddr   string   `yaml:"smtp_account"`
 			SmtpPassword string   `yaml:"smtp_password"`
 			Receiver     []string `yaml:"receiver"`
 		} `yaml:"email"`

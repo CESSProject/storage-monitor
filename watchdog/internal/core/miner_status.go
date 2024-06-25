@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func QueryMinerStatOnChain(accountId string, rpcAddr []string, mnemonic string, interval int) (model.MinerStat, error) {
+func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval int, host string, miner string) (model.MinerStat, error) {
 	var stat model.MinerStat
 	chainClient, err := cess.New(
 		context.Background(),
@@ -33,6 +33,9 @@ func QueryMinerStatOnChain(accountId string, rpcAddr []string, mnemonic string, 
 		return model.MinerStat{}, errors.Wrap(err, "error when query miner stat from chain")
 	}
 	stat, err = util.TransferMinerInfoToMinerStat(chainInfo)
+	if stat.Status != "positive" {
+		alert(stat, host, miner)
+	}
 	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when transfer data to stat object")
 	}
@@ -44,12 +47,12 @@ func QueryMinerStatOnChain(accountId string, rpcAddr []string, mnemonic string, 
 
 	reward, err := chainClient.QueryRewardMap(publicKey, -1)
 	if err != nil {
-		log.Println("query reward failed: ", accountId)
+		log.Println("Failed to query reward from chain: ", accountId)
 		return stat, errors.Wrap(err, "error when query reward from chain")
 	}
 
-	stat.TotalReward = reward.TotalReward.Int
-	stat.RewardIssued = reward.RewardIssued.Int
+	stat.TotalReward = util.BigNumConversion(reward.TotalReward)
+	stat.RewardIssued = util.BigNumConversion(reward.RewardIssued)
 
 	if err != nil {
 		return stat, err
@@ -64,7 +67,38 @@ func QueryMinerStatOnChain(accountId string, rpcAddr []string, mnemonic string, 
 		punishmentInfo := blockData.Punishment
 		for j := 0; j < len(punishmentInfo); j++ {
 			stat.IsPunished[i][j] = punishmentInfo[j].From == accountId
+			if stat.IsPunished[i][j] {
+				alert(stat, host, miner)
+			}
 		}
 	}
 	return stat, nil
+}
+
+func alert(stat model.MinerStat, host string, miner string) {
+	if CustomConfig.Alert.Enable {
+		content := model.AlertContent{
+			AlertTime:     time.Now().Format(constant.TimeFormat),
+			HostIp:        host,
+			ContainerName: miner,
+			Description:   "The Storage Miner is not a positive status or get punishment",
+		}
+		go func() {
+			if SmtpConfigPoint != nil {
+				err := SmtpConfigPoint.SendMail(content)
+				if err != nil {
+					return
+				}
+			}
+		}()
+		go func() {
+			if WebhookConfigPoint != nil {
+				err := WebhookConfigPoint.SendAlertToWebhook(content)
+				if err != nil {
+					return
+				}
+			}
+		}()
+		log.Println("Host: ", host, ", miner: ", miner, " status is not a positive status: ", stat.Status)
+	}
 }
