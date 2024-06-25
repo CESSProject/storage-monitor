@@ -69,7 +69,12 @@ export default function Miner({ host, miners }: MinerProp) {
         className="bg-white dark:border-gray-700 dark:bg-gray-800"
       >
         <Table.Cell className="w-16 whitespace-nowrap font-medium text-gray-900 dark:text-white">
-          <Link href={`dashboard/host?host=${host}`}>{host}</Link>
+          <Link
+            className="text-blue-400 hover:text-blue-500"
+            href={`dashboard/host?host=${host}`}
+          >
+            {host}
+          </Link>
         </Table.Cell>
         <Table.Cell className="w-24">{miner.MinerStat.peer_id}</Table.Cell>
         <Table.Cell>{miner.Name}</Table.Cell>
