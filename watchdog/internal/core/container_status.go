@@ -41,7 +41,7 @@ func NewClient(host model.HostItem) (*Client, error) {
 			client.WithAPIVersionNegotiation(),
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(host.IP, ": Error when init a tls docker cli.", err)
 			return nil, err
 		}
 		return &Client{cli}, nil
@@ -55,7 +55,7 @@ func NewClient(host model.HostItem) (*Client, error) {
 				client.WithAPIVersionNegotiation(),
 			)
 			if err != nil {
-				log.Println(host, ": Error when init a tls docker cli.", err)
+				log.Println(host.IP, ": Error when init a tls docker cli.", err)
 				return nil, err
 			}
 			return &Client{cli}, nil
