@@ -13,6 +13,9 @@ import {
 
 export default function Page() {
   const [data, setData] = useState<HostModel[]>([]);
+  const [filteredData, setFilteredData] = useState<HostModel[]>([]);
+  const [search, setSearch] = useState<string>("");
+
   const data_json = [
     {
       Host: "127.0.0.1",
@@ -59,7 +62,7 @@ export default function Page() {
             lock_space: 0,
             is_punished: [],
             total_reward: 122121211212122,
-            reward_issued: 1213123132132123
+            reward_issued: 1213123132132123,
           },
         },
         {
@@ -108,7 +111,7 @@ export default function Page() {
             lock_space: 0,
             is_punished: [],
             total_reward: 122121211212122,
-            reward_issued: 1213123132132123
+            reward_issued: 1213123132132123,
           },
         },
       ],
@@ -130,8 +133,10 @@ export default function Page() {
       let data: HostModel[] = await response.json();
       console.log(data);
       setData(data);
+      setFilteredData(data);
     } catch (error) {
       setData(data_json);
+      setFilteredData(data_json);
       console.error("Failed to fetch data:", error);
     }
   }, []);
@@ -140,11 +145,34 @@ export default function Page() {
     refreshData();
   }, [refreshData]);
 
+  useEffect(() => {
+    if (search.length > 0) {
+      setFilteredData(
+        data.filter((d) => {
+          return d.Host.includes(search);
+        })
+      );
+    } else {
+      setFilteredData(data);
+    }
+  }, [search]);
+
   return (
     <Fragment>
-      {data.map((host) => {
-          return <Host key={host.Host} host={host} />;
-        })}
+      <section className="pl-12 pr-4 bg-white dark:bg-gray-900">
+        <div className="py-8 px-4 mx-auto max-w-full lg:pt-16">
+          <input
+            className="border text-sm rounded-lg block max-w-screen-xl w-64 p-2.5"
+            type="text"
+            placeholder="Search by Host"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </section>
+      {filteredData.map((host) => {
+        return <Host key={host.Host} host={host} />;
+      })}
     </Fragment>
   );
 }

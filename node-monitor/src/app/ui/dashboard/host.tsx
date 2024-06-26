@@ -16,7 +16,7 @@ export default function Host({ host }: HostProp) {
   return (
     <Fragment>
       <section className="pl-12 pr-4 bg-white dark:bg-gray-900">
-        <div className="py-8 px-4 mx-auto max-w-full lg:py-16">
+        <div className="py-8 px-4 mx-auto max-w-full">
           <h1 className="mb-4 text-xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-2xl dark:text-white">
             Server: <Link className="text-blue-400 hover:text-blue-500" href={`dashboard/host?host=${host.Host}`}>{host.Host}</Link>
           </h1>
