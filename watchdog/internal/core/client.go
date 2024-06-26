@@ -3,9 +3,9 @@ package core
 import (
 	"context"
 	"github.com/CESSProject/watchdog/constant"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +13,6 @@ import (
 	"github.com/CESSProject/cess-go-sdk/utils"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/docker/docker/api/types"
-	"github.com/pkg/errors"
 )
 
 var exeConf = types.ExecConfig{
@@ -21,7 +20,6 @@ var exeConf = types.ExecConfig{
 	WorkingDir:   "/opt/miner/",
 	AttachStdout: true,
 	AttachStderr: true,
-	Tty:          true,
 }
 
 type WatchdogClient struct {
@@ -57,7 +55,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 				errChan <- err
 				return
 			}
-			log.Println("Create a docker client success, host ip: ", host.IP)
+			log.Logger.Infof("Create a docker client with host: %s successfully", host.IP)
 			Clients[host.IP] = &WatchdogClient{
 				Host:         host.IP,
 				Client:       dockerClient,
@@ -78,7 +76,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 func RunWatchdogClients(conf model.YamlConfig) error {
 	for hostIp, client := range Clients {
 		if client != nil {
-			log.Println("Start to run ", hostIp, " client: ", client.dockerCli)
+			log.Logger.Infof("Start to run task at %s", hostIp)
 			go client.RunWatchdogClient(conf)
 		}
 	}
@@ -88,21 +86,31 @@ func RunWatchdogClients(conf model.YamlConfig) error {
 func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
 	interval := conf.ScrapeInterval
 	for {
-		err := cli.setMinerData(conf)
+		err := cli.start(conf)
 		if err != nil {
-			log.Fatal("Error when scrape miner data: ", err)
+			log.Logger.Fatalf("Error when start watchdog %v", err)
 		}
 		time.Sleep(time.Duration(interval) * time.Second) // scrape interval
 	}
 }
-func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
+
+func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	interval := conf.ScrapeInterval
 	containers, err := cli.Client.ListContainers()
-	errChan := make(chan error, len(containers))
+
 	if err != nil {
-		errChan <- err
-		log.Fatal(cli.Host, ": error when list containers")
+		log.Logger.Errorf("Error when listing %s containers: %v", cli.Host, err)
+		return err
 	}
+
+	errChan := make(chan error, len(containers))
+	done := make(chan bool)
+	go func() {
+		for err = range errChan {
+			log.Logger.Errorf("Error when %s task run: %v", cli.Host, err)
+		}
+		done <- true
+	}()
 
 	// get miner info and miner config
 	var setContainersDataWG sync.WaitGroup
@@ -110,14 +118,13 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 		if !strings.Contains(container.Image, constant.MinerImage) {
 			continue
 		}
-		log.Println("Task: Start: ", cli.Host, ", Miner name: ", container.Name)
+		log.Logger.Infof("Task Start: %s, Miner: %s", cli.Host, container.Name)
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
 			err = cli.SetContainerData(container)
 			if err != nil {
 				errChan <- err
-				log.Println(cli.Host, ": error when scrape miners container data.", err)
 			}
 		}(container)
 	}
@@ -132,7 +139,6 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 			res, err := cli.SetContainerStats(context.Background(), m.CInfo.ID)
 			if err != nil {
 				errChan <- err
-				log.Println(cli.Host, ": error when scrape miners container data.", err)
 				return
 			}
 			m.CInfo.CPUPercent = res.CPUPercent
@@ -150,25 +156,20 @@ func (cli *WatchdogClient) setMinerData(conf model.YamlConfig) error {
 			defer setChainDataWG.Done()
 			m.MinerStat, _ = SetChainData(m.AccountId, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
 			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
-			log.Println("Task: Done: ", cli.Host, ", Miner name: ", m.Name)
+			log.Logger.Infof("Task Done: %s, Miner: %s", cli.Host, m.Name)
 		}(miner)
 	}
 	setChainDataWG.Wait()
-
 	close(errChan)
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
+	<-done
 	return nil
 }
 
 func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 	res, err := cli.ExeCommand(cinfo.ID, exeConf)
 	if err != nil {
-		log.Println(cinfo.Name, ": read config from /opt/miner/config.yaml failed in host: ", cli.Host)
-		return errors.Wrap(err, "error when get miner's configuration at /opt/miner/config.yaml")
+		log.Logger.Errorf("%s read config from /opt/miner/config.yaml failed in host: %s", cinfo.Name, cli.Host)
+		return err
 	}
 
 	// res:
@@ -186,7 +187,6 @@ func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 
 	// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
 	//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
-	log.Println("Host: ", cli.Host, " miner: ", cinfo.Name, " start to parse /opt/miner/config.yaml")
 	conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
 	if err != nil {
 		return err
