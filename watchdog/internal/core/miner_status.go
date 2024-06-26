@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/CESSProject/cess-go-sdk/utils"
 	"github.com/CESSProject/watchdog/constant"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
-	"log"
 	"time"
 
 	cess "github.com/CESSProject/cess-go-sdk"
@@ -37,32 +37,31 @@ func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval 
 		alert(stat, host, miner)
 	}
 	if err != nil {
-		return model.MinerStat{}, errors.Wrap(err, "error when transfer data to stat object")
+		log.Logger.Errorf("%s %s failed to transfer object format", host, miner)
+		return model.MinerStat{}, err
 	}
 
 	number, err := chainClient.QueryBlockNumber("")
 	if err != nil {
-		return stat, errors.Wrap(err, "error when query latest block number")
+		log.Logger.Errorf("%s %s failed to query latest block numbe", host, miner)
+		return stat, err
 	}
 
 	reward, err := chainClient.QueryRewardMap(publicKey, -1)
 	if err != nil {
-		log.Println("Failed to query reward from chain: ", accountId)
-		return stat, errors.Wrap(err, "error when query reward from chain")
+		log.Logger.Errorf("%s %s failed to query reward from chain", host, miner)
+		return stat, err
 	}
 
 	stat.TotalReward = util.BigNumConversion(reward.TotalReward)
 	stat.RewardIssued = util.BigNumConversion(reward.RewardIssued)
 
-	if err != nil {
-		return stat, err
-	}
 	latestBlockNum := int(number)
 	blockUncheckNum := interval/constant.GenBlockInterval + 1 // 59/6 + 1 = 10
 	for i := 0; i < blockUncheckNum; i++ {
 		blockData, chainErr := chainClient.ParseBlockData(uint64(latestBlockNum - i))
 		if chainErr != nil {
-			log.Println("AccountId ", accountId, " query info from RPC: ", rpcAddr, " failed: ", chainErr)
+			log.Logger.Errorf("%s %s failed to query info from rpc %s", host, miner, rpcAddr)
 		}
 		punishmentInfo := blockData.Punishment
 		for j := 0; j < len(punishmentInfo); j++ {
@@ -99,6 +98,6 @@ func alert(stat model.MinerStat, host string, miner string) {
 				}
 			}
 		}()
-		log.Println("Host: ", host, ", miner: ", miner, " status is not a positive status: ", stat.Status)
+		log.Logger.Errorf("%s %s status is not a positive status: %s", host, miner, stat.Status)
 	}
 }

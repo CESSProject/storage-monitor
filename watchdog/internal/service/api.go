@@ -3,10 +3,10 @@ package service
 import (
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/core"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"sort"
 )
@@ -39,10 +39,10 @@ func update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	log.Println("Update config to: \n", newConfig)
+	log.Logger.Infof("Update config to: %v", newConfig)
 	configTemp, err := util.LoadConfigFile("/opt/cess/mineradm/config.yaml")
 	if err != nil {
-		log.Fatalf("Fail to load /opt/cess/mineradm/config.yaml")
+		log.Logger.Errorf("Fail to load /opt/cess/mineradm/config.yaml")
 	}
 
 	// remove old config
@@ -52,7 +52,7 @@ func update(c *gin.Context) {
 
 	err = util.SaveConfigFile(constant.ConfPath, configTemp)
 	if err != nil {
-		log.Fatalf("Fail to save /opt/cess/mineradm/config.yaml")
+		log.Logger.Errorf("Fail to save /opt/cess/mineradm/config.yaml")
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "update conf success"})
 }
@@ -79,7 +79,7 @@ func getListByCondition(hostIp string) []MinerInfoVO {
 				return res[i].Host < res[j].Host
 			})
 		} else {
-			log.Println("Host IP not found: ", hostIp)
+			log.Logger.Warnf("Host IP not found: %s", hostIp)
 		}
 	} else {
 		res = make([]MinerInfoVO, 0)
