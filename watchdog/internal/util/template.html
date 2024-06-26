@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alert Information</title>
+    <title>CESS Information</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,15 +11,17 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             width: 100%;
             max-width: 600px;
             margin: 0 auto;
-            background-color: #ffffff;
+            background-color: #F0F4FD;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .header {
             background-color: #007bff;
             color: #ffffff;
@@ -27,12 +29,16 @@
             text-align: center;
             border-radius: 8px 8px 0 0;
         }
+
         .content {
             padding: 20px;
+            font-weight: bold;
         }
+
         .content p {
             margin: 0 0 10px;
         }
+
         .footer {
             text-align: center;
             padding: 10px;
@@ -44,13 +50,13 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>Alert Information</h1>
+        <h1>CESS Information</h1>
     </div>
     <div class="content">
-        <p><strong>Alert Time:</strong> {{.AlertTime}}</p>
-        <p><strong>Host IP:</strong> {{.HostIp}}</p>
-        <p><strong>Miner Name:</strong> {{.ContainerName}}</p>
-        <p><strong>Description:</strong> {{.Description}}</p>
+        <p><strong>Alert Time:</strong> {{.AlertTime}} </p><br>
+        <p><strong>Host IP:</strong> {{.HostIp}} </p><br>
+        <p><strong>Miner Name:</strong> {{.ContainerName}} </p><br>
+        <p><strong>Description:</strong> {{.Description}} </p>
     </div>
     <div class="footer">
         <p>This email is sent automatically by the CESS Node Monitor, please do not reply.</p>

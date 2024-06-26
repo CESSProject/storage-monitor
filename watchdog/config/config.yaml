@@ -16,10 +16,10 @@ alert:
     - https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
     - https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_WEBHOOK_URL>
   email:
-    smtp_endpoint: email-smtp.us-west-1.amazonaws.com
+    smtp_endpoint: smtp.example.com
     smtp_port: 80
     smtp_account: myservice@cess.cloud
     smtp_password: my_pwd
     receive_addr:
       - "example1@gmail.com"
-      - "example2@gmail.com"
+      - "example2@outlook.com"

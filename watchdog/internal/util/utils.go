@@ -7,7 +7,6 @@ import (
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	"math/big"
 	"net"
@@ -18,7 +17,7 @@ func ParseMinerConfigFile(data []byte) (model.MinerConfigFile, error) {
 	var conf model.MinerConfigFile
 	err := yaml.Unmarshal(data, &conf) // unmarshal = parse
 	if err != nil {
-		return conf, errors.Wrap(err, "parse miner config file error")
+		return conf, err
 	}
 	return conf, nil
 }
