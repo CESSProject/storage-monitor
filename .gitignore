@@ -1,20 +1,20 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-node-monitor/web/node_modules
-node-monitor/web/.pnp
+node-monitor/node_modules
+node-monitor/.pnp
 .pnp.js
 .yarn/install-state.gz
 
 # testing
-node-monitor/web/coverage
+node-monitor/coverage
 
 # next.js
-node-monitor/web/.next/
-node-monitor/web/out/
+node-monitor/.next/
+node-monitor/out/
 
 # production
-node-monitor/web/build
+node-monitor/build
 
 # misc
 .DS_Store
