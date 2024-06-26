@@ -34,8 +34,6 @@ export default function Page() {
     refreshData();
   }, [refreshData]);
   return (
-    <div className="pl-12 pr-4 bg-white dark:bg-gray-900">
-      <Miner host={host} miners={data?.MinerInfoList}/>
-    </div>
+    <Miner host={host} miners={data?.MinerInfoList}/>
   );
 }
