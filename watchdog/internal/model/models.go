@@ -57,9 +57,9 @@ type MinerConfigFile struct {
 	StakingAcc  string   `name:"StakingAcc" toml:"StakingAcc" yaml:"StakingAcc"`
 	Mnemonic    string   `name:"Mnemonic" toml:"Mnemonic" yaml:"Mnemonic"`
 	Rpc         []string `name:"Rpc" toml:"Rpc" yaml:"Rpc"`
-	UseSpace    uint64   `name:"UseSpace" toml:"UseSpace" yaml:"UseSpace"`
+	UseSpace    int      `name:"UseSpace" toml:"UseSpace" yaml:"UseSpace"`
 	Workspace   string   `name:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	UseCpu      uint8    `name:"UseCpu" toml:"UseCpu" yaml:"UseCpu"`
+	UseCpu      int      `name:"UseCpu" toml:"UseCpu" yaml:"UseCpu"`
 	TeeList     []string `name:"TeeList" toml:"TeeList" yaml:"TeeList"`
 	Boot        []string `name:"Boot" toml:"Boot" yaml:"Boot"`
 }
