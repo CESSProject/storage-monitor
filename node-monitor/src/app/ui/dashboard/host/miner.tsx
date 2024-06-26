@@ -11,37 +11,50 @@ interface MinerProp {
 }
 
 export default function Page({ host, miners }: MinerProp) {
-  const [filteredMiners, setFilteredMiners] = useState<MinerInfoListModel[] | undefined>(undefined);
+  const [filteredMiners, setFilteredMiners] = useState<
+    MinerInfoListModel[] | undefined
+  >(undefined);
   const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
-    setFilteredMiners(miners);
-  }, []);
+    if (miners) {
+      setFilteredMiners(miners);
+    }
+  }, [miners]);
 
   useEffect(() => {
-
-    setFilteredMiners(miners?.filter((m) => {
-      return m.Name.toLowerCase().includes(search.toLowerCase())
-    }));
-  }, [search]);
+    if (miners) {
+      setFilteredMiners(
+        miners?.filter((m) => {
+          return m.Name.toLowerCase().includes(search.toLowerCase());
+        })
+      );
+    }
+  }, [search, miners]);
 
   return (
     <Fragment>
       <section className="pr-4 bg-white dark:bg-gray-900">
-          <div className="py-8 px-4 mx-auto max-w-full lg:pt-16">
-            <input
-              className="border text-sm rounded-lg block max-w-screen-xl w-64 p-2.5"
-              type="text"
-              placeholder="Search by Miner Name"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+        <div className="py-8 px-4 mx-auto max-w-full lg:pt-16">
+          <input
+            className="border text-sm rounded-lg block max-w-screen-xl w-64 p-2.5"
+            type="text"
+            placeholder="Search by Miner Name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </section>
       <section className="pr-4 bg-white dark:bg-gray-900 h-full">
         <div className="py-8 px-4 mx-auto max-w-full">
           <h1 className="mb-4 text-xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-2xl dark:text-white">
-            Server: <Link className="text-blue-400 hover:text-blue-500" href={`/dashboard/host?host=${host}`}>{host}</Link>
+            Server:{" "}
+            <Link
+              className="text-blue-400 hover:text-blue-500"
+              href={`/dashboard/host?host=${host}`}
+            >
+              {host}
+            </Link>
           </h1>
           <div className="flex flex-col w-full space-y-4 sm:flex-row sm:justify-center sm:space-y-0">
             {filteredMiners != null ? (
@@ -99,7 +112,7 @@ export default function Page({ host, miners }: MinerProp) {
                             <Table.Cell>{m.Conf.UseSpace}</Table.Cell>
                             <Table.Cell>{m.Conf.Workspace}</Table.Cell>
                             <Table.Cell>{m.Conf.UseCpu}</Table.Cell>
-                            <Table.Cell>{m.Conf.TeeList.join(', ')}</Table.Cell>
+                            <Table.Cell>{m.Conf.TeeList.join(", ")}</Table.Cell>
                             <Table.Cell>{m.Conf.Boot}</Table.Cell>
                             <Table.Cell>{m.CInfo.id}</Table.Cell>
                             <Table.Cell>{m.CInfo.names}</Table.Cell>

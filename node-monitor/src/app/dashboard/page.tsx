@@ -131,7 +131,6 @@ export default function Page() {
       }
 
       let data: HostModel[] = await response.json();
-      console.log(data);
       setData(data);
       setFilteredData(data);
     } catch (error) {

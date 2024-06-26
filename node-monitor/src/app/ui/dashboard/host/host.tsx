@@ -10,7 +10,6 @@ export default function Page() {
   const host = searchParams.get("host");
 
   const refreshData = useCallback(async () => {
-    console.log(host)
     try {
       const response = await fetch(`${getApiServerUrl()}/list?host=${host}`, {
         method: "GET",
