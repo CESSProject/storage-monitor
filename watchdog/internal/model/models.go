@@ -65,17 +65,21 @@ type MinerConfigFile struct {
 }
 
 type YamlConfig struct {
-	Hosts          []HostItem `yaml:"hosts"`
-	ScrapeInterval int        `yaml:"scrapeInterval,omitempty"`
+	Hosts          []HostItem `yaml:"hosts" json:"hosts"`
+	ScrapeInterval int        `yaml:"scrapeInterval" json:"scrapeInterval"`
 	Alert          struct {
-		Enable  bool     `yaml:"enable"`
-		Webhook []string `yaml:"webhook"`
+		Enable  bool     `yaml:"enable" json:"enable"`
+		Webhook []string `yaml:"webhook,omitempty" json:"webhook,omitempty"`
 		Email   struct {
-			SmtpEndpoint string   `yaml:"smtp_endpoint"`
-			SmtpPort     int      `yaml:"smtp_port"`
-			SenderAddr   string   `yaml:"smtp_account"`
-			SmtpPassword string   `yaml:"smtp_password"`
-			Receiver     []string `yaml:"receiver"`
+			SmtpEndpoint string   `yaml:"smtp_endpoint,omitempty" json:"smtp_endpoint,omitempty"`
+			SmtpPort     int      `yaml:"smtp_port,omitempty" json:"smtp_port,omitempty"`
+			SenderAddr   string   `yaml:"smtp_account,omitempty" json:"smtp_account,omitempty"`
+			SmtpPassword string   `yaml:"smtp_password,omitempty" json:"smtp_password,omitempty"`
+			Receiver     []string `yaml:"receiver,omitempty" json:"receiver,omitempty"`
 		} `yaml:"email"`
-	} `yaml:"alert"`
+	} `yaml:"alert" json:"alert"`
+}
+
+type AlertToggle struct {
+	Status bool `name:"enable"`
 }
