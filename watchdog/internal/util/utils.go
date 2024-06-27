@@ -107,9 +107,9 @@ func RemoveFields(config map[interface{}]interface{}, fields ...string) {
 }
 
 func AddFields(config map[interface{}]interface{}, conf model.YamlConfig) {
-	config["ScrapeInterval"] = conf.ScrapeInterval
-	config["Host"] = conf.Hosts
-	config["Alert"] = conf.Alert
+	config["scrapeInterval"] = conf.ScrapeInterval
+	config["hosts"] = conf.Hosts
+	config["alert"] = conf.Alert
 }
 
 func SaveConfigFile(filePath string, config map[interface{}]interface{}) error {
