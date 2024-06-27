@@ -26,16 +26,17 @@ type WatchdogClient struct {
 	Host         string                // 127.0.0.1
 	*Client                            // docker cli
 	MinerInfoMap map[string]*MinerInfo // key: miner-name
+	Updating     bool                  // is miners data updating ?
 }
 
 var Clients = map[string]*WatchdogClient{} // key: hostIP
 
 type MinerInfo struct {
-	Name      string
-	AccountId string
-	Conf      model.MinerConfigFile
-	CInfo     model.Container
-	MinerStat model.MinerStat
+	Name         string
+	SignatureAcc string
+	Conf         model.MinerConfigFile
+	CInfo        model.Container
+	MinerStat    model.MinerStat
 }
 
 func InitWatchdogClients(conf model.YamlConfig) error {
@@ -60,6 +61,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 				Host:         host.IP,
 				Client:       dockerClient,
 				MinerInfoMap: make(map[string]*MinerInfo),
+				Updating:     false,
 			}
 		}(idx, host)
 	}
@@ -84,17 +86,17 @@ func RunWatchdogClients(conf model.YamlConfig) error {
 }
 
 func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
-	interval := conf.ScrapeInterval
 	for {
 		err := cli.start(conf)
 		if err != nil {
 			log.Logger.Fatalf("Error when start watchdog %v", err)
 		}
-		time.Sleep(time.Duration(interval) * time.Second) // scrape interval
+		time.Sleep(time.Duration(CustomConfig.ScrapeInterval) * time.Second) // scrape interval
 	}
 }
 
 func (cli *WatchdogClient) start(conf model.YamlConfig) error {
+	cli.Updating = true
 	interval := conf.ScrapeInterval
 	containers, err := cli.Client.ListContainers()
 
@@ -117,6 +119,15 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	for _, container := range containers {
 		if !strings.Contains(container.Image, constant.MinerImage) {
 			continue
+		}
+		runningMiners := make(map[string]bool)
+		for _, v := range containers {
+			runningMiners[v.Name] = true
+		}
+		for key, _ := range cli.MinerInfoMap {
+			if !runningMiners[key] {
+				delete(cli.MinerInfoMap, key)
+			}
 		}
 		log.Logger.Infof("Task Start: %s, Miner: %s", cli.Host, container.Name)
 		setContainersDataWG.Add(1)
@@ -154,12 +165,13 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setChainDataWG.Add(1)
 		go func(m *MinerInfo) {
 			defer setChainDataWG.Done()
-			m.MinerStat, _ = SetChainData(m.AccountId, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
+			m.MinerStat, _ = SetChainData(m.SignatureAcc, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
 			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
 			log.Logger.Infof("Task Done: %s, Miner: %s", cli.Host, m.Name)
 		}(miner)
 	}
 	setChainDataWG.Wait()
+	cli.Updating = false
 	close(errChan)
 	<-done
 	return nil
@@ -202,13 +214,20 @@ func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 		return err
 	}
 
-	info := MinerInfo{
-		Name:      conf.Name,
-		AccountId: acc,
-		CInfo:     cinfo,
-		Conf:      conf,
-		MinerStat: model.MinerStat{},
+	if _, ok := cli.MinerInfoMap[cinfo.Name]; ok {
+		cli.MinerInfoMap[cinfo.Name].Name = conf.Name
+		cli.MinerInfoMap[cinfo.Name].SignatureAcc = acc
+		cli.MinerInfoMap[cinfo.Name].Conf = conf
+		cli.MinerInfoMap[cinfo.Name].CInfo = cinfo
+	} else {
+		cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
+			Name:         conf.Name,
+			SignatureAcc: acc,
+			CInfo:        cinfo,
+			Conf:         conf,
+			MinerStat:    model.MinerStat{},
+		}
 	}
-	cli.MinerInfoMap[cinfo.Name] = &info
+
 	return nil
 }
