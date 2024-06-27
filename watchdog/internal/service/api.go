@@ -7,54 +7,166 @@ import (
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/yaml.v3"
 	"net/http"
+	"net/url"
+	"os"
 	"sort"
+	"strings"
+	"time"
 )
 
+// watchdog godoc
+// @Schemes
+// @Description Service HealthCheck
+// @Tags HealthCheck
+// @Success 200 {string} ok
+// @Router / [get]
 func healthCheck(c *gin.Context) {
 	res := "ok"
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
-// get miner info list
+// watchdog godoc
+// @Description  List miners in each host
+// @Tags         List Miners by host
+// @Produce      json
+// @Param        host   query  string   false  "Host IP"
+// @Success      200  {object}  []MinerInfoVO
+// @Router       /list  [get]
 func list(c *gin.Context) {
 	host := c.Query("host")
 	data := getListByCondition(host)
-	c.JSON(200, data)
+	c.JSON(http.StatusOK, data)
 }
 
-// get host ip list
+// watchdog godoc
+// @Description  List host
+// @Tags         Get Hosts
+// @Success      200  {object}  []string
+// @Router       /hosts [get]
 func getHosts(c *gin.Context) {
 	res := make([]string, 0)
 	for hostIP, _ := range core.Clients {
 		res = append(res, hostIP)
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
-// update monitor service' configuration
-func update(c *gin.Context) {
-	var newConfig = model.YamlConfig{}
+// watchdog godoc
+// @Description  Get Clients Status
+// @Tags         Get Hosts
+// @Success      200  {object} map[string]string
+// @Router       /clients [get]
+func getClientsStatus(c *gin.Context) {
+	res := map[string]string{}
+	for _, client := range core.Clients {
+		if client.Updating {
+			res[client.Host] = "Running"
+		} else {
+			res[client.Host] = "Sleep"
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// watchdog godoc
+// @Description  Update watchdog configuration
+// @Tags         Update Config
+// @Accept       json
+// @Produce      json
+// @Param        model.yamlConfig body model.YamlConfig true "YAML Configuration"
+// @Success      200 {object} model.YamlConfig
+// @Router       /config [post]
+func setConfig(c *gin.Context) {
+	var newConfig model.YamlConfig
 	if err := c.ShouldBindJSON(&newConfig); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	log.Logger.Infof("Update config to: %v", newConfig)
-	configTemp, err := util.LoadConfigFile("/opt/cess/mineradm/config.yaml")
+	configTemp, err := util.LoadConfigFile(constant.ConfPath)
 	if err != nil {
-		log.Logger.Errorf("Fail to load /opt/cess/mineradm/config.yaml")
+		log.Logger.Errorf("Fail to load %s", constant.ConfPath)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to load config file from /opt/monitor/config.yaml"})
+		return
 	}
-
 	// remove old config
-	util.RemoveFields(configTemp, "Hosts", "ScrapeInterval", "Alert")
+	util.RemoveFields(configTemp, "hosts", "scrapeInterval", "alert")
 	// add new config
 	util.AddFields(configTemp, newConfig)
-
 	err = util.SaveConfigFile(constant.ConfPath, configTemp)
 	if err != nil {
-		log.Logger.Errorf("Fail to save /opt/cess/mineradm/config.yaml")
+		log.Logger.Errorf("Fail to save file to: %v", constant.ConfPath)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to save config file to /opt/monitor/config.yaml"})
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "update conf success"})
+	log.Logger.Infof("Update config to: %v", newConfig)
+	go runWithNewConf(newConfig)
+	c.JSON(http.StatusOK, gin.H{"message": "update Watchdog config success"})
+}
+
+// watchdog godoc
+// @Description  Get watchdog configuration
+// @Tags         Get Config
+// @Produce      json
+// @Success      200 {object} model.YamlConfig
+// @Router       /config [get]
+func getConfig(c *gin.Context) {
+	var conf model.YamlConfig
+	conf = core.CustomConfig
+	for i := 0; i < len(conf.Alert.Webhook); i++ {
+		conf.Alert.Webhook[i] = splitURLByTopLevelDomain(conf.Alert.Webhook[i])
+	}
+	for i := 0; i < len(conf.Alert.Email.Receiver); i++ {
+		conf.Alert.Email.Receiver[i] = replaceFirstThreeChars(conf.Alert.Email.Receiver[i])
+	}
+	conf.Alert.Email.SenderAddr = replaceFirstThreeChars(conf.Alert.Email.SenderAddr)
+	conf.Alert.Email.SmtpPassword = "*"
+	c.JSON(http.StatusOK, conf)
+}
+
+// watchdog godoc
+// @Description  Get Alert Status
+// @Tags         Get Alert Status
+// @Produce      json
+// @Success      200 {object} bool
+// @Router       /toggle [get]
+func getToggle(c *gin.Context) {
+	status := core.CustomConfig.Alert.Enable
+	c.JSON(http.StatusOK, status)
+}
+
+// watchdog godoc
+// @Description  Set Alert Status
+// @Tags         Set Alert Status
+// @Accept       json
+// @Produce      json
+// @Param        model.AlertToggle body model.AlertToggle true "Alert Toggle Status"
+// @Success      200 {object} model.AlertToggle
+// @Router       /toggle [post]
+func setToggle(c *gin.Context) {
+	var alertToggle = model.AlertToggle{}
+	if err := c.ShouldBindJSON(&alertToggle); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	conf := core.CustomConfig
+	conf.Alert.Enable = alertToggle.Status
+	data, err := yaml.Marshal(conf)
+	if err != nil {
+		log.Logger.Errorf("Fail to parse conf: %v", conf)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to parse conf"})
+		return
+	}
+	err = os.WriteFile(constant.ConfPath, data, 0644)
+	if err != nil {
+		log.Logger.Errorf("Fail to save file to: %v", constant.ConfPath)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to save config file to /opt/monitor/config.yaml"})
+		return
+	}
+	core.CustomConfig.Alert.Enable = alertToggle.Status
+	log.Logger.Infof("Switch alert status to: %v", alertToggle.Status)
+	c.JSON(http.StatusOK, gin.H{"message": "updateConfig alert status success"})
 }
 
 type MinerInfoVO struct {
@@ -103,4 +215,66 @@ func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.Miner
 		minerInfoArray = append(minerInfoArray, *minerInfo)
 	}
 	return minerInfoArray
+}
+
+func replaceFirstThreeChars(s string) string {
+	// 123456@cess.cloud -> ***456@cess.cloud
+	if len(s) < 5 {
+		return s
+	}
+	return "***" + s[3:]
+}
+
+func splitURLByTopLevelDomain(inputURL string) string {
+	// https://example.com/bot/v2/hook/4bb9bfc7-dat4-41g9-962d-d8b4c139f37c -> https://example.com/***
+	parsedURL, err := url.Parse(inputURL)
+	if err != nil {
+		log.Logger.Warnf("Parse webhook url err: %v", err)
+		return ""
+	}
+	hostname := parsedURL.Hostname()
+	lastDotIndex := strings.LastIndex(hostname, ".")
+	if lastDotIndex == -1 {
+		log.Logger.Warnf("no top-level domain found in Webhook URL")
+		return ""
+	}
+	res := parsedURL.Scheme + "://" + hostname + "/***"
+	return res
+}
+
+func runWithNewConf(config model.YamlConfig) {
+	err := core.InitWatchdogConfig()
+	if err != nil {
+		return
+	}
+	core.InitSmtpConfig()
+	core.InitWebhookConfig()
+	core.CustomConfig.ScrapeInterval = 99999
+	for {
+		if canProceed() {
+			err = core.InitWatchdogClients(core.CustomConfig)
+			if err != nil {
+				log.Logger.Fatalf("Init CESS Node Monitor Service With New Conf Failed: %v", err)
+			}
+			err = core.RunWatchdogClients(core.CustomConfig)
+			if err != nil {
+				log.Logger.Fatalf("Run CESS Node Monitor With New Conf failed: %v", err)
+				return
+			}
+			break
+		} else {
+			log.Logger.Infof("Some client might running, wait for next try")
+		}
+		time.Sleep(time.Duration(5) * time.Second)
+	}
+	core.CustomConfig.ScrapeInterval = config.ScrapeInterval
+}
+
+func canProceed() bool {
+	for _, client := range core.Clients {
+		if client.Updating {
+			return false
+		}
+	}
+	return true
 }
