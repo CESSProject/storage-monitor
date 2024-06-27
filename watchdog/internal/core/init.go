@@ -22,7 +22,7 @@ var WebhookConfigPoint *util.WebhookConfig
 
 func Run() {
 	log.InitLogger()
-	err := InitMonitorConfig()
+	err := InitWatchdogConfig()
 	if err != nil {
 		return
 	}
@@ -40,7 +40,7 @@ func Run() {
 	}
 }
 
-func InitMonitorConfig() error {
+func InitWatchdogConfig() error {
 	yamlFile, err := os.ReadFile(constant.ConfPath)
 	if err != nil {
 		log.Logger.Fatalf("Error when read file from /opt/monitor/config.yaml: %v", err)
@@ -58,7 +58,7 @@ func InitMonitorConfig() error {
 		return err
 	}
 	// 30 <= ScrapeInterval <= 300
-	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 600)))
+	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 300)))
 	log.Logger.Infof("Service run with config file: %v", CustomConfig)
 	return nil
 }
