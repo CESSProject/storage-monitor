@@ -1,10 +1,14 @@
 package service
 
 import (
+	"github.com/CESSProject/watchdog/internal/log"
+	"github.com/CESSProject/watchdog/internal/util"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"net"
 	"net/http"
+	"strings"
 )
 
 func RegisterRoutes(r *gin.Engine) {
@@ -13,22 +17,39 @@ func RegisterRoutes(r *gin.Engine) {
 	r.GET("/list", list)
 	r.GET("/hosts", getHosts)
 	r.GET("/clients", getClientsStatus)
-	//r.Group("/").Use(localhostOnly()).POST("/config", setConfig)
+	r.Group("/").Use(safeConnectionOnly()).POST("/config", setConfig)
 	r.GET("/config", getConfig)
-	r.POST("/config", setConfig)
 	r.GET("/toggle", getToggle)
 	r.POST("/toggle", setToggle)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
-func localhostOnly() gin.HandlerFunc {
+// unsafe request might leak your smtpAcc/smtpPwd and webhookUrl
+func safeConnectionOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.RemoteAddr != "127.0.0.1" && c.Request.RemoteAddr != "::1" {
+		ip := getClientIP(c)
+		log.Logger.Infof("Try to update config, request by client ip: %s", ip)
+		if !util.IsPrivateIP(net.ParseIP(ip)) && c.Request.TLS == nil {
+			log.Logger.Warnf("Can not update config with a public client IP %s without TLS encrypt", ip)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": "Access denied",
+				"error": "Access denied, Please request with a Private IP or TLS",
 			})
 			return
 		}
 		c.Next()
 	}
+}
+
+func getClientIP(c *gin.Context) string {
+	xForwardedFor := c.Request.Header.Get("X-Forwarded-For")
+	if xForwardedFor != "" {
+		return strings.Split(xForwardedFor, ",")[0]
+	}
+	xRealIP := c.Request.Header.Get("X-Real-IP")
+	if xRealIP != "" {
+		return xRealIP
+	}
+	addr := c.Request.RemoteAddr
+	ip, _, _ := net.SplitHostPort(addr)
+	return ip
 }

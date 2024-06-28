@@ -47,7 +47,7 @@ func list(c *gin.Context) {
 // @Router       /hosts [get]
 func getHosts(c *gin.Context) {
 	res := make([]string, 0)
-	for hostIP, _ := range core.Clients {
+	for hostIP := range core.Clients {
 		res = append(res, hostIP)
 	}
 	c.JSON(http.StatusOK, res)
@@ -100,8 +100,8 @@ func setConfig(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to save config file to /opt/monitor/config.yaml"})
 		return
 	}
-	log.Logger.Infof("Update config to: %v", newConfig)
-	go runWithNewConf(newConfig)
+	log.Logger.Infof("Save new config %v to: %s", configTemp, constant.ConfPath)
+	go runWithNewConf()
 	c.JSON(http.StatusOK, gin.H{"message": "update Watchdog config success"})
 }
 
@@ -122,6 +122,7 @@ func getConfig(c *gin.Context) {
 	}
 	conf.Alert.Email.SenderAddr = replaceFirstThreeChars(conf.Alert.Email.SenderAddr)
 	conf.Alert.Email.SmtpPassword = "*"
+	conf.Server = model.YamlConfig{}.Server
 	c.JSON(http.StatusOK, conf)
 }
 
@@ -182,7 +183,7 @@ func getListByCondition(hostIp string) []MinerInfoVO {
 				Host:          hostIp,
 				MinerInfoList: getMinersListByClientInfo(core.Clients[hostIp].MinerInfoMap),
 			}
-			for minerName, _ := range VO.MinerInfoList {
+			for minerName := range VO.MinerInfoList {
 				VO.MinerInfoList[minerName].Conf.Mnemonic = ""
 			}
 			res = make([]MinerInfoVO, 0)
@@ -242,32 +243,39 @@ func splitURLByTopLevelDomain(inputURL string) string {
 	return res
 }
 
-func runWithNewConf(config model.YamlConfig) {
-	err := core.InitWatchdogConfig()
-	if err != nil {
-		return
+func runWithNewConf() {
+	for key := range core.Clients {
+		core.Clients[key].Active = false
 	}
-	core.InitSmtpConfig()
-	core.InitWebhookConfig()
-	core.CustomConfig.ScrapeInterval = 99999
+	try := 0
 	for {
+		// max scrapeInterval is 300, sleep time is 5s, 300/5=60
+		if try > 60 {
+			break
+		}
 		if canProceed() {
+			err := core.InitWatchdogConfig()
+			if err != nil {
+				return
+			}
+			core.InitSmtpConfig()
+			core.InitWebhookConfig()
 			err = core.InitWatchdogClients(core.CustomConfig)
 			if err != nil {
 				log.Logger.Fatalf("Init CESS Node Monitor Service With New Conf Failed: %v", err)
 			}
 			err = core.RunWatchdogClients(core.CustomConfig)
 			if err != nil {
-				log.Logger.Fatalf("Run CESS Node Monitor With New Conf failed: %v", err)
-				return
+				log.Logger.Fatalf("Fail to run with new clients: %v", err)
 			}
 			break
 		} else {
-			log.Logger.Infof("Some client might running, wait for next try")
+			log.Logger.Infof("Run with new config failed, Some watchdog clients might running, retrying (%d/%d)", try+1, 60)
 		}
+		try++
 		time.Sleep(time.Duration(5) * time.Second)
 	}
-	core.CustomConfig.ScrapeInterval = config.ScrapeInterval
+	log.Logger.Info("Run with new config success")
 }
 
 func canProceed() bool {

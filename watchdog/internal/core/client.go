@@ -2,17 +2,16 @@ package core
 
 import (
 	"context"
+	"github.com/CESSProject/cess-go-sdk/utils"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+	"github.com/docker/docker/api/types"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/CESSProject/cess-go-sdk/utils"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
-	"github.com/docker/docker/api/types"
 )
 
 var exeConf = types.ExecConfig{
@@ -27,6 +26,8 @@ type WatchdogClient struct {
 	*Client                            // docker cli
 	MinerInfoMap map[string]*MinerInfo // key: miner-name
 	Updating     bool                  // is miners data updating ?
+	Active       bool                  // sleep or run
+	mutex        sync.Mutex
 }
 
 var Clients = map[string]*WatchdogClient{} // key: hostIP
@@ -56,13 +57,14 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 				errChan <- err
 				return
 			}
-			log.Logger.Infof("Create a docker client with host: %s successfully", host.IP)
 			Clients[host.IP] = &WatchdogClient{
 				Host:         host.IP,
 				Client:       dockerClient,
 				MinerInfoMap: make(map[string]*MinerInfo),
 				Updating:     false,
+				Active:       true,
 			}
+			log.Logger.Infof("Create a docker client with host: %s successfully", host.IP)
 		}(idx, host)
 	}
 	initClientsWG.Wait()
@@ -72,6 +74,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 			return err
 		}
 	}
+	log.Logger.Info("Init Watchdog Clients Down")
 	return nil
 }
 
@@ -87,9 +90,14 @@ func RunWatchdogClients(conf model.YamlConfig) error {
 
 func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
 	for {
-		err := cli.start(conf)
-		if err != nil {
-			log.Logger.Fatalf("Error when start watchdog %v", err)
+		if cli.Active {
+			err := cli.start(conf)
+			if err != nil {
+				log.Logger.Warnf("Error when start %s watchdog client %v", cli.Host, err)
+			}
+		} else {
+			// gc will collect inactive clients
+			break
 		}
 		time.Sleep(time.Duration(CustomConfig.ScrapeInterval) * time.Second) // scrape interval
 	}
@@ -124,12 +132,11 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		for _, v := range containers {
 			runningMiners[v.Name] = true
 		}
-		for key, _ := range cli.MinerInfoMap {
+		for key := range cli.MinerInfoMap {
 			if !runningMiners[key] {
 				delete(cli.MinerInfoMap, key)
 			}
 		}
-		log.Logger.Infof("Task Start: %s, Miner: %s", cli.Host, container.Name)
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
@@ -167,7 +174,6 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 			defer setChainDataWG.Done()
 			m.MinerStat, _ = SetChainData(m.SignatureAcc, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
 			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
-			log.Logger.Infof("Task Done: %s, Miner: %s", cli.Host, m.Name)
 		}(miner)
 	}
 	setChainDataWG.Wait()
@@ -213,7 +219,8 @@ func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 	if err != nil {
 		return err
 	}
-
+	cli.mutex.Lock()
+	defer cli.mutex.Unlock()
 	if _, ok := cli.MinerInfoMap[cinfo.Name]; ok {
 		cli.MinerInfoMap[cinfo.Name].Name = conf.Name
 		cli.MinerInfoMap[cinfo.Name].SignatureAcc = acc
@@ -228,6 +235,5 @@ func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
 			MinerStat:    model.MinerStat{},
 		}
 	}
-
 	return nil
 }
