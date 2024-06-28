@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval int, host string, miner string) (model.MinerStat, error) {
+func SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interval int, host string, miner string) (model.MinerStat, error) {
 	var stat model.MinerStat
 	chainClient, err := cess.New(
 		context.Background(),
@@ -24,7 +24,7 @@ func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval 
 	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when new a cess client")
 	}
-	publicKey, err := utils.ParsingPublickey(accountId)
+	publicKey, err := utils.ParsingPublickey(signatureAcc)
 	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when parse public key")
 	}
@@ -43,7 +43,7 @@ func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval 
 
 	number, err := chainClient.QueryBlockNumber("")
 	if err != nil {
-		log.Logger.Errorf("%s %s failed to query latest block numbe", host, miner)
+		log.Logger.Errorf("%s %s failed to query latest block number", host, miner)
 		return stat, err
 	}
 
@@ -65,7 +65,7 @@ func SetChainData(accountId string, rpcAddr []string, mnemonic string, interval 
 		}
 		punishmentInfo := blockData.Punishment
 		for j := 0; j < len(punishmentInfo); j++ {
-			stat.IsPunished[i][j] = punishmentInfo[j].From == accountId
+			stat.IsPunished[i][j] = punishmentInfo[j].From == signatureAcc
 			if stat.IsPunished[i][j] {
 				alert(stat, host, miner)
 			}
