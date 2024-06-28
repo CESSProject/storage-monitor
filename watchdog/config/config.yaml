@@ -1,17 +1,30 @@
-# 30 <= scrapeInterval <= 300
-scrapeInterval: 10000
+server:
+  http:
+    # watchdog server listen http port at: 13080
+    http_port: 13080
+  https:
+    # watchdog server listen https port at: 13443 if crt/key file exist
+    cert_path: /opt/cess/mineradm/watchdog/server.crt
+    key_path: /opt/cess/mineradm/watchdog/server.key
+    https_port: 13443
+  # external: run with 0.0.0.0 or 127.0.0.1
+  external: true
+# the interval of query data from chain for each miner, 30 <= scrapeInterval <= 300
+scrapeInterval: 60
 hosts:
   - ip: 127.0.0.1
+    # make sure docker daemon listen at 2375: https://docs.docker.com/config/daemon/remote-access/
     port: 2375
-  # connect to docker use tls to make sure mnemonic safe when do network transmission
-  # set ca_path/cert_path/key_path if the ip no belongs to [ 127.x, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ]
+  # Configure remote access for Docker daemon must use tls to make sure mnemonic safe when do network transmission
+  # set ca/crt/key path if the ip no belongs to [ 127.x, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ]
   - ip: 1.1.1.1
-    port: 2375
-    ca_path: /etc/docker/127.0.0.1/ca.pem
-    cert_path: /etc/docker/127.0.0.1/cert.pem
-    key_path: /etc/docker/127.0.0.1/key.pem
+    # make sure docker daemon tls listen at 2376: https://docs.docker.com/engine/security/protect-access/
+    port: 2376
+    ca_path: /opt/cess/mineradm/watchdog/1.1.1.1/ca.pem
+    cert_path: /opt/cess/mineradm/watchdog/1.1.1.1/cert.pem
+    key_path: /opt/cess/mineradm/watchdog/1.1.1.1/key.pem
 alert:
-  enable: true
+  enable: false
   webhook:
     - https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
     - https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_WEBHOOK_URL>
