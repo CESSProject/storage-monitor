@@ -11,8 +11,8 @@ var Logger *logrus.Logger
 func InitLogger() {
 	Logger = logrus.New()
 	Logger.Out = os.Stdout
-	Logger.Formatter = &logrus.JSONFormatter{
+	Logger.Formatter = &logrus.TextFormatter{
 		TimestampFormat: constant.TimeFormat,
-		PrettyPrint:     false,
+		FullTimestamp:   true,
 	}
 }

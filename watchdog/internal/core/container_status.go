@@ -23,8 +23,6 @@ type DockerCli interface {
 	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
 	ContainerStats(ctx context.Context, containerID string, stream bool) (types.ContainerStats, error)
 	Ping(ctx context.Context) (types.Ping, error)
-
-	//exec
 	ContainerExecAttach(ctx context.Context, execID string, config types.ExecStartCheck) (types.HijackedResponse, error)
 	ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (types.IDResponse, error)
 }
@@ -48,6 +46,8 @@ func NewClient(host model.HostItem) (*Client, error) {
 		return &Client{cli}, nil
 	} else {
 		if host.CAPath == "" || host.CertPath == "" || host.KeyPath == "" {
+			log.Logger.Warn("Use a unsafe tcp connection will lead your mnemonic!")
+			log.Logger.Warnf("Can not init a docker cli with public IP: %s without a tls configuration", host.IP)
 			return nil, nil
 		} else {
 			cli, err := client.NewClientWithOpts(

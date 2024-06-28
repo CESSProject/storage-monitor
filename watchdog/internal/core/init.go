@@ -59,7 +59,7 @@ func InitWatchdogConfig() error {
 	}
 	// 30 <= ScrapeInterval <= 300
 	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 300)))
-	log.Logger.Infof("Service run with config file: %v", CustomConfig)
+	log.Logger.Infof("Init watchdog with config file: %v", CustomConfig)
 	return nil
 }
 
