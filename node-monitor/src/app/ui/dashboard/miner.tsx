@@ -50,7 +50,7 @@ interface MinerStatModel {
 
 export interface MinerInfoListModel {
   Name: string;
-  AccountId: string;
+  SignatureAcc: string;
   Conf: ConfModel;
   CInfo: CInfoModel;
   MinerStat: MinerStatModel;
@@ -65,7 +65,7 @@ export default function Miner({ host, miners }: MinerProp) {
   return miners?.map((miner) => {
     return (
       <Table.Row
-        key={miner.AccountId}
+        key={miner.SignatureAcc}
         className="bg-white dark:border-gray-700 dark:bg-gray-800"
       >
         <Table.Cell className="w-16 whitespace-nowrap font-medium text-gray-900 dark:text-white">

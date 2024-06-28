@@ -22,7 +22,7 @@ export default function Page() {
       MinerInfoList: [
         {
           Name: "miner1",
-          AccountId: "cXhbtbtB94mc5JFCVGXKCYz75ttWsSJ2ifWXRdRGTTe3pjQDf",
+          SignatureAcc: "cXhbtbtB94mc5JFCVGXKCYz75ttWsSJ2ifWXRdRGTTe3pjQDf",
           Conf: {
             Name: "miner1",
             Port: 15001,
@@ -67,7 +67,7 @@ export default function Page() {
         },
         {
           Name: "miner2",
-          AccountId: "cXkZ6AvHTf3sozwkkXPPuMm1JjqUvoRFyjJh381zY8PLADixR",
+          SignatureAcc: "cXkZ6AvHTf3sozwkkXPPuMm1JjqUvoRFyjJh381zY8PLADixR",
           Conf: {
             Name: "miner2",
             Port: 15002,

@@ -13,7 +13,7 @@ import {
   HiShoppingBag,
   HiUsers,
 } from "react-icons/hi";
-import { HiInformationCircle, HiSquaresPlus } from "react-icons/hi2";
+import { HiComputerDesktop, HiInformationCircle, HiSquaresPlus } from "react-icons/hi2";
 
 export function LeftDrawer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,26 +55,11 @@ export function LeftDrawer() {
                 </form>
                 <Sidebar.Items>
                   <Sidebar.ItemGroup>
-                    <Sidebar.Item href="/" icon={HiChartPie}>
+                    <Sidebar.Item href="/dashboard" icon={HiChartPie}>
                       Dashboard
                     </Sidebar.Item>
-                    <Sidebar.Item
-                      href="/e-commerce/products"
-                      icon={HiShoppingBag}
-                    >
-                      Products
-                    </Sidebar.Item>
-                    <Sidebar.Item href="/users/list" icon={HiUsers}>
-                      Users list
-                    </Sidebar.Item>
-                    <Sidebar.Item href="/authentication/sign-in" icon={HiLogin}>
-                      Sign in
-                    </Sidebar.Item>
-                    <Sidebar.Item
-                      href="/authentication/sign-up"
-                      icon={HiPencil}
-                    >
-                      Sign up
+                    <Sidebar.Item href="/dashboard/system" icon={HiComputerDesktop}>
+                      System
                     </Sidebar.Item>
                   </Sidebar.ItemGroup>
                   <Sidebar.ItemGroup>
