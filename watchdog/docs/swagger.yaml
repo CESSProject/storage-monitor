@@ -1,0 +1,294 @@
+definitions:
+  core.MinerInfo:
+    properties:
+      cinfo:
+        $ref: '#/definitions/model.Container'
+      conf:
+        $ref: '#/definitions/model.MinerConfigFile'
+      minerStat:
+        $ref: '#/definitions/model.MinerStat'
+      name:
+        type: string
+      signatureAcc:
+        type: string
+    type: object
+  model.AlertToggle:
+    properties:
+      status:
+        type: boolean
+    type: object
+  model.Container:
+    properties:
+      command:
+        type: string
+      cpu_percent:
+        type: number
+      created:
+        type: integer
+      id:
+        type: string
+      image:
+        type: string
+      image_id:
+        type: string
+      mem_usage:
+        type: integer
+      memory_percent:
+        type: number
+      name:
+        type: string
+      names:
+        items:
+          type: string
+        type: array
+      state:
+        type: string
+      status:
+        type: string
+    type: object
+  model.HostItem:
+    properties:
+      capath:
+        description: /etc/docker/127.0.0.1/ca.pem
+        type: string
+      certPath:
+        description: /etc/docker/127.0.0.1/cert.pem
+        type: string
+      ip:
+        description: host ip
+        type: string
+      keyPath:
+        description: /etc/docker/127.0.0.1/key.pem
+        type: string
+      port:
+        description: docker api port
+        type: string
+    type: object
+  model.MinerConfigFile:
+    properties:
+      boot:
+        items:
+          type: string
+        type: array
+      earningsAcc:
+        type: string
+      mnemonic:
+        type: string
+      name:
+        type: string
+      port:
+        type: integer
+      rpc:
+        items:
+          type: string
+        type: array
+      stakingAcc:
+        type: string
+      teeList:
+        items:
+          type: string
+        type: array
+      useCpu:
+        type: integer
+      useSpace:
+        type: integer
+      workspace:
+        type: string
+    type: object
+  model.MinerStat:
+    properties:
+      collaterals:
+        type: string
+      debt:
+        type: string
+      declaration_space:
+        description: 'unit: TiB'
+        type: string
+      idle_space:
+        type: string
+      is_punished:
+        items:
+          items:
+            type: boolean
+          type: array
+        type: array
+      lock_space:
+        description: upload file allocated to this miner but not get a proof from
+          tee yet, it can be serviceSpace after get proof from tee
+        type: string
+      peer_id:
+        type: string
+      reward_issued:
+        type: string
+      service_space:
+        type: string
+      status:
+        description: positive, exit, frozen, unready(register on chain but no get
+          a tag from tee)
+        type: string
+      total_reward:
+        type: string
+    type: object
+  model.YamlConfig:
+    properties:
+      alert:
+        properties:
+          email:
+            properties:
+              receiver:
+                items:
+                  type: string
+                type: array
+              smtp_account:
+                type: string
+              smtp_endpoint:
+                type: string
+              smtp_password:
+                type: string
+              smtp_port:
+                type: integer
+            type: object
+          enable:
+            type: boolean
+          webhook:
+            items:
+              type: string
+            type: array
+        type: object
+      hosts:
+        items:
+          $ref: '#/definitions/model.HostItem'
+        type: array
+      scrapeInterval:
+        type: integer
+    type: object
+  service.MinerInfoVO:
+    properties:
+      host:
+        type: string
+      minerInfoList:
+        items:
+          $ref: '#/definitions/core.MinerInfo'
+        type: array
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      description: Service HealthCheck
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      tags:
+      - HealthCheck
+  /clients:
+    get:
+      description: Get Clients Status
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - Get Hosts
+  /config:
+    get:
+      description: Get watchdog configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.YamlConfig'
+      tags:
+      - Get Config
+    post:
+      consumes:
+      - application/json
+      description: Update watchdog configuration
+      parameters:
+      - description: YAML Configuration
+        in: body
+        name: model.yamlConfig
+        required: true
+        schema:
+          $ref: '#/definitions/model.YamlConfig'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.YamlConfig'
+      tags:
+      - Update Config
+  /hosts:
+    get:
+      description: List host
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      tags:
+      - Get Hosts
+  /list:
+    get:
+      description: List miners in each host
+      parameters:
+      - description: Host IP
+        in: query
+        name: host
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/service.MinerInfoVO'
+            type: array
+      tags:
+      - List Miners by host
+  /toggle:
+    get:
+      description: Get Alert Status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      tags:
+      - Get Alert Status
+    post:
+      consumes:
+      - application/json
+      description: Set Alert Status
+      parameters:
+      - description: Alert Toggle Status
+        in: body
+        name: model.AlertToggle
+        required: true
+        schema:
+          $ref: '#/definitions/model.AlertToggle'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AlertToggle'
+      tags:
+      - Set Alert Status
+swagger: "2.0"

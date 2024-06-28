@@ -1,15 +1,16 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"strings"
@@ -41,7 +42,7 @@ func NewClient(host model.HostItem) (*Client, error) {
 			client.WithAPIVersionNegotiation(),
 		)
 		if err != nil {
-			log.Println(host.IP, ": Error when init a tls docker cli.", err)
+			log.Logger.Errorf("Error when init a docker cli with %s: %v", host.IP, err)
 			return nil, err
 		}
 		return &Client{cli}, nil
@@ -55,7 +56,7 @@ func NewClient(host model.HostItem) (*Client, error) {
 				client.WithAPIVersionNegotiation(),
 			)
 			if err != nil {
-				log.Println(host.IP, ": Error when init a tls docker cli.", err)
+				log.Logger.Errorf("Error when init a tls docker cli with %s: %v", host.IP, err)
 				return nil, err
 			}
 			return &Client{cli}, nil
@@ -66,7 +67,7 @@ func NewClient(host model.HostItem) (*Client, error) {
 func (cli *Client) ListContainers() ([]model.Container, error) {
 	list, err := cli.dockerCli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "list containers error")
+		return nil, err
 	}
 	containers := make([]model.Container, len(list))
 	for i, c := range list {
@@ -100,8 +101,8 @@ func (cli *Client) SetContainerStats(ctx context.Context, cid string) (model.Con
 	var v *types.StatsJSON
 	decoder := json.NewDecoder(response.Body)
 
-	if err := decoder.Decode(&v); err == io.EOF {
-		log.Fatalf("Docker Container Stats API Response io.EOF")
+	if err = decoder.Decode(&v); err == io.EOF {
+		log.Logger.Errorf("Docker Container Stats API Response io.EOF")
 		return model.ContainerStat{}, nil
 	} else if err != nil {
 		panic(err)
@@ -136,22 +137,23 @@ func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
 }
 
 func (cli *Client) ExeCommand(cid string, config types.ExecConfig) ([]byte, error) {
-	execId, err := cli.dockerCli.ContainerExecCreate(context.Background(), cid, config)
+	ctx := context.Background()
+	execId, err := cli.dockerCli.ContainerExecCreate(ctx, cid, config)
 	if err != nil {
 		return nil, errors.Wrap(err, "exe cmd in container error")
 	}
-	resp, err := cli.dockerCli.ContainerExecAttach(context.Background(), execId.ID, types.ExecStartCheck{})
+	resp, err := cli.dockerCli.ContainerExecAttach(ctx, execId.ID, types.ExecStartCheck{})
 	if err != nil {
 		return nil, errors.Wrap(err, "exe cmd in container error")
 	}
 	defer resp.Close()
 
-	buf, err := io.ReadAll(resp.Reader)
-	if err != nil {
-		return nil, errors.Wrap(err, "exe cmd in container error")
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, resp.Reader); err != nil {
+		return nil, errors.Wrap(err, "read response from container error")
 	}
 
-	return buf, nil
+	return buf.Bytes(), nil
 }
 
 func (cli *Client) Ping(ctx context.Context) (types.Ping, error) {

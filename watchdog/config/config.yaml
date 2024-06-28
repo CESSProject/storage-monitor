@@ -1,10 +1,10 @@
-# 30 <= scrapeInterval <= 600
+# 30 <= scrapeInterval <= 300
 scrapeInterval: 10000
 hosts:
   - ip: 127.0.0.1
     port: 2375
-  # connect to docker use tls
-  # set ca_path/cert_path/key_path if the ip no belongs to intranet[ 127.x, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ]
+  # connect to docker use tls to make sure mnemonic safe when do network transmission
+  # set ca_path/cert_path/key_path if the ip no belongs to [ 127.x, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 ]
   - ip: 1.1.1.1
     port: 2375
     ca_path: /etc/docker/127.0.0.1/ca.pem

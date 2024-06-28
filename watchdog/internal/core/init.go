@@ -2,9 +2,9 @@ package core
 
 import (
 	"github.com/CESSProject/watchdog/constant"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"math"
 	"os"
@@ -21,28 +21,29 @@ var SmtpConfigPoint *util.SmtpConfig
 var WebhookConfigPoint *util.WebhookConfig
 
 func Run() {
-	err := InitMonitorConfig()
+	log.InitLogger()
+	err := InitWatchdogConfig()
 	if err != nil {
 		return
 	}
 	InitSmtpConfig()
 	InitWebhookConfig()
-	log.Println("Service run with Host: ", CustomConfig.Hosts)
+	log.Logger.Infof("Service run with host %v", CustomConfig.Hosts)
 	err = InitWatchdogClients(CustomConfig)
 	if err != nil {
-		log.Fatal("Init CESS Node Monitor Service Failed: ", err)
+		log.Logger.Fatalf("Init CESS Node Monitor Service Failed: %v", err)
 	}
 	err = RunWatchdogClients(CustomConfig)
 	if err != nil {
-		log.Fatal("Run CESS Node Monitor failed", err)
+		log.Logger.Fatalf("Run CESS Node Monitor failed: %v", err)
 		return
 	}
 }
 
-func InitMonitorConfig() error {
+func InitWatchdogConfig() error {
 	yamlFile, err := os.ReadFile(constant.ConfPath)
 	if err != nil {
-		log.Fatalf("Error when read file from /opt/monitor/config.yaml: %v", err)
+		log.Logger.Fatalf("Error when read file from /opt/monitor/config.yaml: %v", err)
 		return err
 	}
 	CustomConfig = model.YamlConfig{}
@@ -53,12 +54,12 @@ func InitMonitorConfig() error {
 	//For pointer types, the zero value is nil.
 	err = yaml.Unmarshal(yamlFile, &CustomConfig)
 	if err != nil {
-		log.Fatalf("Error when parse file from /opt/monitor/config.yaml: %v", err)
+		log.Logger.Fatalf("Error when parse file from /opt/monitor/config.yaml: %v", err)
 		return err
 	}
-	// 30 <= ScrapeInterval <= 600
-	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 600)))
-	log.Println("Service run with config file: \n", CustomConfig)
+	// 30 <= ScrapeInterval <= 300
+	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 300)))
+	log.Logger.Infof("Service run with config file: %v", CustomConfig)
 	return nil
 }
 
