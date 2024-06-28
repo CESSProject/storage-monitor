@@ -440,6 +440,36 @@ const docTemplate = `{
                 },
                 "scrapeInterval": {
                     "type": "integer"
+                },
+                "server": {
+                    "type": "object",
+                    "properties": {
+                        "external": {
+                            "type": "boolean"
+                        },
+                        "http": {
+                            "type": "object",
+                            "properties": {
+                                "http_port": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "https": {
+                            "type": "object",
+                            "properties": {
+                                "cert_path": {
+                                    "type": "string"
+                                },
+                                "https_port": {
+                                    "type": "integer"
+                                },
+                                "key_path": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },

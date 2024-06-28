@@ -161,6 +161,25 @@ definitions:
         type: array
       scrapeInterval:
         type: integer
+      server:
+        properties:
+          external:
+            type: boolean
+          http:
+            properties:
+              http_port:
+                type: integer
+            type: object
+          https:
+            properties:
+              cert_path:
+                type: string
+              https_port:
+                type: integer
+              key_path:
+                type: string
+            type: object
+        type: object
     type: object
   service.MinerInfoVO:
     properties:
