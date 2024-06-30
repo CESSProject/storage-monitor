@@ -2,3 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
+.search-button {
+    padding-left: 20px;
+}

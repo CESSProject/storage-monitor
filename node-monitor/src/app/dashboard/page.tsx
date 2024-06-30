@@ -1,20 +1,47 @@
 "use client";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
 import Host, { HostModel } from "../ui/dashboard/host";
 import { getApiServerUrl } from "@/utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-} from "flowbite-react";
+import { FaSearch } from "react-icons/fa";
+
 
 export default function Page() {
   const [data, setData] = useState<HostModel[]>([]);
   const [filteredData, setFilteredData] = useState<HostModel[]>([]);
   const [search, setSearch] = useState<string>("");
+  const params = new URLSearchParams({ host: search });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch().then(r => console.log(r));
+    }
+  };
+
+  const handleSearch = useCallback(async () => {
+    try {
+      const response = await fetch(`${getApiServerUrl()}/list?${params.toString()}`, {
+        method: "GET"
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          "Server responded with an error. Please check the watchdog status or contact support."
+        );
+      }
+      let data: HostModel[] = await response.json();
+      setData(data);
+      setFilteredData(data);
+    } catch (error) {
+      setData(data_json);
+      setFilteredData(data);
+      console.error("Failed to fetch data:", error);
+    }
+  }, []);
+
 
   const data_json = [
     {
@@ -34,7 +61,7 @@ export default function Page() {
             Workspace: "/opt/miner-disk",
             UseCpu: 1,
             TeeList: ["127.0.0.1:8080", "127.0.0.1:8081"],
-            Boot: ["_dnsaddr.boot-miner-devnet.cess.cloud"],
+            Boot: ["_dnsaddr.boot-miner-devnet.cess.cloud"]
           },
           CInfo: {
             id: "06c3a73480beb6f5cc0980b417cb6fe50d4d00523c04ecee7fa4e81c07803e2c",
@@ -49,7 +76,7 @@ export default function Page() {
             status: "Up 2 days (healthy)",
             cpu_percent: 0.09462686567164179,
             memory_percent: 65.0955894142814,
-            mem_usage: 10908557312,
+            mem_usage: 10908557312
           },
           MinerStat: {
             peer_id: "12D3KooWAxvCokRK1MCmBLCsjYjBYitjgZ3cmpAGAoC2GWrYQARn",
@@ -62,8 +89,8 @@ export default function Page() {
             lock_space: 0,
             is_punished: [],
             total_reward: 122121211212122,
-            reward_issued: 1213123132132123,
-          },
+            reward_issued: 1213123132132123
+          }
         },
         {
           Name: "miner2",
@@ -79,7 +106,7 @@ export default function Page() {
             Workspace: "/opt/miner-disk",
             UseCpu: 1,
             TeeList: ["127.0.0.1:8080", "127.0.0.1:8081"],
-            Boot: ["_dnsaddr.boot-miner-devnet.cess.cloud"],
+            Boot: ["_dnsaddr.boot-miner-devnet.cess.cloud"]
           },
           CInfo: {
             id: "95f2843d4101ea8290fe1915ab054191893f4ec5ad0dcae438b271a72be4fda4",
@@ -94,7 +121,7 @@ export default function Page() {
             status: "Up 2 days (healthy)",
             cpu_percent: 0.25415841584158416,
             memory_percent: 0.42065404003863854,
-            mem_usage: 70492160,
+            mem_usage: 70492160
           },
           MinerStat: {
             earning_acc:
@@ -111,38 +138,16 @@ export default function Page() {
             lock_space: 0,
             is_punished: [],
             total_reward: 122121211212122,
-            reward_issued: 1213123132132123,
-          },
-        },
-      ],
-    },
+            reward_issued: 1213123132132123
+          }
+        }
+      ]
+    }
   ];
 
-  const refreshData = useCallback(async () => {
-    try {
-      const response = await fetch(`${getApiServerUrl()}/list`, {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          "Server responded with an error. Please check the server status or contact support."
-        );
-      }
-
-      let data: HostModel[] = await response.json();
-      setData(data);
-      setFilteredData(data);
-    } catch (error) {
-      setData(data_json);
-      setFilteredData(data_json);
-      console.error("Failed to fetch data:", error);
-    }
-  }, []);
-
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    handleSearch().then(r => console.log(r));
+  }, [handleSearch]);
 
   useEffect(() => {
     if (search.length > 0) {
@@ -156,17 +161,25 @@ export default function Page() {
     }
   }, [search]);
 
+
   return (
     <Fragment>
       <section className="pl-12 pr-4 bg-white dark:bg-gray-900">
-        <div className="py-8 px-4 mx-auto max-w-full lg:pt-16">
+        <div className="py-8 px-4 mx-auto max-w-full lg:pt-16 flex items-center justify-center">
           <input
-            className="border text-sm rounded-lg block max-w-screen-xl w-64 p-2.5"
             type="text"
-            placeholder="Search by Host"
+            placeholder="Search by Host IP"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            className="px-8 py-4 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <button
+            onClick={handleSearch}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-5 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 search-button"
+          >
+            <FaSearch className="text-white" />
+          </button>
         </div>
       </section>
       {filteredData.map((host) => {

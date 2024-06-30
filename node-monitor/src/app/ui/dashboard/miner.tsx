@@ -1,6 +1,13 @@
 import { Table } from "flowbite-react";
 import Link from "next/link";
-import { Fragment } from "react";
+import React, { Fragment } from "react";
+
+
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons';
+import { Tag } from 'antd';
 
 // Conf container config
 interface ConfModel {
@@ -64,35 +71,24 @@ interface MinerProp {
 export default function Miner({ host, miners }: MinerProp) {
   return miners?.map((miner) => {
     return (
-      <Table.Row
-        key={miner.SignatureAcc}
-        className="bg-white dark:border-gray-700 dark:bg-gray-800"
-      >
-        <Table.Cell className="w-16 whitespace-nowrap font-medium text-gray-900 dark:text-white">
-          <Link
-            className="text-blue-400 hover:text-blue-500"
-            href={`dashboard/host?host=${host}`}
-          >
-            {host}
-          </Link>
-        </Table.Cell>
-        <Table.Cell className="w-24">{miner.MinerStat.peer_id}</Table.Cell>
-        <Table.Cell>{miner.Name}</Table.Cell>
-        <Table.Cell className="justify-center">
+      <Table.Row key={miner.SignatureAcc} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Table.Cell className="text-center">{miner.Name}</Table.Cell>
+        <Table.Cell className="w-24">{miner.SignatureAcc}</Table.Cell>
+        <Table.Cell className="text-center">
           {miner.MinerStat.status == "positive" ? (
-            <span className="flex w-3 h-3 me-3 bg-green-500 rounded-full"></span>
+              <Tag icon={<CheckCircleOutlined />} color="success">Running</Tag>
           ) : (
-            <span className="flex w-3 h-3 me-3 bg-red-500 rounded-full"></span>
+            <Tag icon={<CloseCircleOutlined />} color="error">Stop</Tag>
           )}
         </Table.Cell>
-        <Table.Cell>
-          <a
-            href="#"
-            className="font-medium text-cyan-600 hover:underline dark:text-cyan-500"
-          >
-            Edit
-          </a>
-        </Table.Cell>
+        <Table.Cell className="text-center">{miner.MinerStat.declaration_space}</Table.Cell>
+        <Table.Cell className="text-center">{miner.Conf.UseSpace} GiB</Table.Cell>
+        <Table.Cell className="text-center">{miner.MinerStat.total_reward} GiB</Table.Cell>
+        <Table.Cell className="text-center">{miner.MinerStat.reward_issued} GiB</Table.Cell>
+        <Table.Cell className="text-center">{miner.MinerStat.idle_space}</Table.Cell>
+        <Table.Cell className="text-center">{miner.MinerStat.service_space}</Table.Cell>
+        <Table.Cell className="text-center">{miner.CInfo.mem_usage} MiB</Table.Cell>
+        <Table.Cell className="text-center">{miner.CInfo.cpu_percent * 100}% </Table.Cell>
       </Table.Row>
     );
   });
