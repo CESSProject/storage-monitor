@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -85,9 +86,9 @@ func (cli *Client) ListContainers() ([]model.Container, error) {
 			Created:       c.Created,
 			State:         c.State,
 			Status:        c.Status,
-			CPUPercent:    float64(0),
-			MemoryPercent: float64(0),
-			MemoryUsage:   uint64(0),
+			CPUPercent:    "0%",
+			MemoryPercent: "0%",
+			MemoryUsage:   "0",
 		}
 	}
 	return containers, nil
@@ -113,13 +114,13 @@ func (cli *Client) SetContainerStats(ctx context.Context, cid string) (model.Con
 	memPercent := float64(memUsage) / float64(memLimit) * 100.0
 	res := model.ContainerStat{
 		CPUPercent:    cpuPercent,
-		MemoryPercent: memPercent,
-		MemoryUsage:   memUsage / 1048576,
+		MemoryPercent: strconv.FormatFloat(memPercent, 'f', 2, 64),
+		MemoryUsage:   strconv.Itoa(int(memUsage / 1048576)),
 	}
 	return res, nil
 }
 
-func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
+func calculateCPUPercentUnix(v *types.StatsJSON) string {
 	var (
 		cpuPercent  = 0.0
 		cpuDelta    = float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
@@ -133,7 +134,7 @@ func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
 	if systemDelta > 0.0 && cpuDelta > 0.0 {
 		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
 	}
-	return cpuPercent
+	return strconv.FormatFloat(cpuPercent, 'f', 2, 64)
 }
 
 func (cli *Client) ExeCommand(cid string, config types.ExecConfig) ([]byte, error) {

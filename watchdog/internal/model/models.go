@@ -25,15 +25,15 @@ type Container struct {
 	Created       int64    `json:"created"`
 	State         string   `json:"state"`
 	Status        string   `json:"status"`
-	CPUPercent    float64  `json:"cpu_percent"`
-	MemoryPercent float64  `json:"memory_percent"`
-	MemoryUsage   uint64   `json:"mem_usage"`
+	CPUPercent    string   `json:"cpu_percent"`
+	MemoryPercent string   `json:"memory_percent"`
+	MemoryUsage   string   `json:"mem_usage"`
 }
 
 type ContainerStat struct {
-	CPUPercent    float64
-	MemoryPercent float64
-	MemoryUsage   uint64
+	CPUPercent    string
+	MemoryPercent string
+	MemoryUsage   string
 }
 
 type MinerStat struct {
