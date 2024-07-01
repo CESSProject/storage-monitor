@@ -1,21 +1,17 @@
-FROM golang:1.20-alpine3.18 AS builder
+FROM nginx:alpine
 
-# go_proxy
-ARG go_proxy
-ENV GOPROXY ${go_proxy}
+WORKDIR /app
 
-# Workdir
-WORKDIR /opt/target
+# Copy the built files from the previous stage
+COPY .next /usr/share/nginx/html
 
-# Copy file
-COPY ./server ./server
-COPY ./dashboard/dist ./dist
-# Build
-RUN cd server && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' -gcflags '-N -l' -o node-monitor main.go
+# Copy custom NGINX configuration file
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Run
-FROM alpine:3.18 AS runner
-WORKDIR /opt/server
-COPY --from=builder /opt/target/server/node-monitor ./node-monitor
-COPY --from=builder /opt/target/dist ./dist
-ENTRYPOINT ["./node-monitor"]
+# Expose port 80
+EXPOSE 13081
+
+# Start NGINX
+CMD ["nginx", "-g", "daemon off;"]
+
+# docker build -t cesslab/watchdog-ui:devnet .

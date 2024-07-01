@@ -16,3 +16,5 @@ RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' -gcflags '-N
 FROM alpine:3.18 AS runner
 COPY --from=builder /opt/monitor/watchdog ./watchdog
 ENTRYPOINT ["./watchdog"]
+
+# docker build cesslab/watchdog:latest .
