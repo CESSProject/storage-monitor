@@ -213,6 +213,7 @@ func getListByCondition(hostIp string) []MinerInfoVO {
 func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.MinerInfo {
 	var minerInfoArray []core.MinerInfo
 	for _, minerInfo := range minerMap {
+		minerInfo.Conf.Mnemonic = "-"
 		minerInfoArray = append(minerInfoArray, *minerInfo)
 	}
 	return minerInfoArray
