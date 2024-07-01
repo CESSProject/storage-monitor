@@ -1,6 +1,7 @@
 import React from "react";
-import { LeftDrawer } from "../ui/dashboard/left-drawer";
-import NavBar from "../ui/dashboard/navbar";
+import { LeftDrawer } from "../components/sidebar";
+import NavBar from "../components/navbar";
+import Footer from "@/app/components/footer";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 
@@ -11,6 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <NavBar />
         {children}
       </div>
+        {/*<Footer />*/}
     </div>
   );
 }

@@ -7,11 +7,7 @@ import {
   HiChartPie,
   HiClipboard,
   HiCollection,
-  HiLogin,
-  HiPencil,
   HiSearch,
-  HiShoppingBag,
-  HiUsers,
 } from "react-icons/hi";
 import { HiComputerDesktop, HiInformationCircle, HiSquaresPlus } from "react-icons/hi2";
 
