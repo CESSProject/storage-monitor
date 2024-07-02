@@ -10,7 +10,7 @@ node-monitor/.pnp
 node-monitor/coverage
 
 # next.js
-node-monitor/.next/
+node-monitor/.next/cache
 node-monitor/out/
 
 # production
