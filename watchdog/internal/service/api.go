@@ -121,8 +121,7 @@ func getConfig(c *gin.Context) {
 		conf.Alert.Email.Receiver[i] = replaceFirstThreeChars(conf.Alert.Email.Receiver[i])
 	}
 	conf.Alert.Email.SenderAddr = replaceFirstThreeChars(conf.Alert.Email.SenderAddr)
-	conf.Alert.Email.SmtpPassword = "*"
-	conf.Server = model.YamlConfig{}.Server
+	conf.Alert.Email.SmtpPassword = "******"
 	c.JSON(http.StatusOK, conf)
 }
 
