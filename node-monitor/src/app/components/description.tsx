@@ -1,7 +1,7 @@
 import React from 'react';
 import {DescriptionsProps, Divider} from 'antd';
 import {Descriptions} from 'antd';
-import {MinerInfoListModel} from "@/app/dashboard/miner";
+import {MinerInfoListModel} from "@/app/dashboard/miners";
 
 const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): DescriptionsProps['items'] => [
     {
@@ -61,7 +61,7 @@ const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): Description
                 </p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">CPU Usage: </strong>{minerInfo.CInfo.cpu_percent * 100} %
+                    className="text-sm font-bold text-gray-900 dark:text-black">CPU Usage: </strong>{minerInfo.CInfo.cpu_percent} %
                 </p>
                 <Divider></Divider>
                 <p><strong

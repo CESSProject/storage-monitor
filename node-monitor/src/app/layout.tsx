@@ -1,26 +1,36 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type {Metadata} from "next";
+import {Inter} from "next/font/google";
 import "./globals.css";
-import { ThemeModeScript } from "flowbite-react";
+import {ThemeModeScript} from "flowbite-react";
+import {LeftDrawer} from "@/app/components/sidebar";
+import NavBar from "@/app/components/navbar";
+import Footer from "@/app/components/footer";
+import React from "react";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({subsets: ["latin"]});
 
 export const metadata: Metadata = {
-  title: "Storage Monitor",
-  description: "Monitor and manage CESS miners",
+    title: "Storage Monitor",
+    description: "Monitor and manage CESS miners",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeModeScript />
-      </head>
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
+export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
+    return (
+        <html lang="en" suppressHydrationWarning>
+        <head>
+            <link rel="icon" href="/favicon.ico" type="image/x-icon"/>
+            <ThemeModeScript/>
+        </head>
+        <body className={inter.className}>
+        <div className="w-screen h-screen dark:bg-black">
+            <LeftDrawer/>
+            <div className="w-full flex-grow p-1 md:overflow-y-auto md:p-1">
+                <NavBar/>
+                {children}
+            </div>
+            <Footer/>
+        </div>
+        </body>
+        </html>
+    );
 }

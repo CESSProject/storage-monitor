@@ -9,7 +9,7 @@ export default function NavBar() {
             <Navbar.Brand as={Link} href="/dashboard" className="pl-12">
                 <Image
                     src="/favicon.ico"
-                    className="mr-3 h-6 sm:h-9"
+                    className="mr-3 h-6 sm:h-9 auto"
                     alt="Storage Monitor Logo"
                     width={36}
                     height={24}
