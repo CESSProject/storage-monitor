@@ -18,7 +18,7 @@ type MinerInfoVO struct {
 var CustomConfig model.YamlConfig
 
 var SmtpConfigPoint *util.SmtpConfig
-var WebhookConfigPoint *util.WebhookConfig
+var WebhooksConfig *util.WebhookConfig
 
 func Run() {
 	log.InitLogger()
@@ -84,7 +84,7 @@ func InitWebhookConfig() {
 	if len(CustomConfig.Alert.Webhook) == 0 {
 		return
 	}
-	WebhookConfigPoint = &util.WebhookConfig{
+	WebhooksConfig = &util.WebhookConfig{
 		Webhooks: CustomConfig.Alert.Webhook,
 	}
 }

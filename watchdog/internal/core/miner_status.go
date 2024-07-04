@@ -91,8 +91,8 @@ func alert(stat model.MinerStat, host string, miner string) {
 			}
 		}()
 		go func() {
-			if WebhookConfigPoint != nil {
-				err := WebhookConfigPoint.SendAlertToWebhook(content)
+			if WebhooksConfig != nil {
+				err := WebhooksConfig.SendAlertToWebhook(content)
 				if err != nil {
 					return
 				}

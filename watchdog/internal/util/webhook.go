@@ -1,43 +1,107 @@
 package util
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"net/http"
-	"strings"
+	"sync"
 )
 
-type WebhookConfig struct {
-	Webhooks []string
+type WebhookSender interface {
+	SendMessage(message string) error
 }
 
-func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err error) {
-	sendData := `{
-		"msg_type": "text",
-		"content": {"text": "` + "CESS Information: " + " Alert Time: " + content.AlertTime + ", Host: " + content.HostIp + ", Miner Name: " + content.ContainerName + ", Description: " + content.Description + `"}
-	}`
-	for i := 0; i < len(conf.Webhooks); i++ {
-		req, err := http.NewRequest("POST", conf.Webhooks[i], strings.NewReader(sendData))
-		req.Header.Set("Content-Type", "application/json")
-		if err != nil {
-			log.Logger.Error("Failed to create new http request client when call a webhook")
-			return err
-		}
-		go func() {
-			err := sendRequest(req)
-			if err != nil {
-				return
-			}
-		}()
+type DiscordWebhook struct {
+	// https://discord.com/api/webhooks/................
+	WebhookURL string
+}
+
+func (discord *DiscordWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"content": message,
 	}
-	return nil
+	return sendWebhookRequest(discord.WebhookURL, payload)
 }
 
-func sendRequest(req *http.Request) error {
-	client := &http.Client{}
+type TeamsWebhook struct {
+	// api.telegram.org/................
+	WebhookURL string
+}
+
+func (teams *TeamsWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"text": message,
+	}
+	return sendWebhookRequest(teams.WebhookURL, payload)
+}
+
+type WechatWebhook struct {
+	// qyapi.weixin.qq.com/................
+	WebhookURL string
+}
+
+func (wechat *WechatWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"msgtype": "text",
+		"text": map[string]string{
+			"content": message,
+		},
+	}
+	return sendWebhookRequest(wechat.WebhookURL, payload)
+}
+
+type SlackWebhook struct {
+	// https://hooks.slack.com/services/................
+	WebhookURL string
+}
+
+func (slack *SlackWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"text": message,
+	}
+	return sendWebhookRequest(slack.WebhookURL, payload)
+}
+
+type DingTalkWebhook struct {
+	// https://oapi.dingtalk.com/robot/send?access_token=................
+	WebhookURL string
+}
+
+func (ding *DingTalkWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"msgtype": "text",
+		"text": map[string]string{
+			"content": message,
+		},
+	}
+	return sendWebhookRequest(ding.WebhookURL, payload)
+}
+
+type LarkWebhook struct {
+	// https://open.larksuite.com/open-apis/bot/v2/hook/...............
+	WebhookURL string
+}
+
+func (lark *LarkWebhook) SendMessage(message string) error {
+	payload := map[string]interface{}{
+		"msg_type": "text",
+		"content": map[string]string{
+			"text": message,
+		},
+	}
+	return sendWebhookRequest(lark.WebhookURL, payload)
+}
+
+func sendWebhookRequest(url string, payload interface{}) error {
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 	for j := 0; j < constant.HttpMaxRetry; j++ {
-		resp, err := client.Do(req)
+		resp, err := http.Post(url, constant.HttpPostContentType, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			log.Logger.Warnf("Fail when request to webhook: %v, retrying (%d/%d)\n", err, j+1, constant.HttpMaxRetry)
 		} else {
@@ -55,6 +119,53 @@ func sendRequest(req *http.Request) error {
 			return err
 		}
 	}
+	return nil
+}
 
+type WebhookConfig struct {
+	Webhooks []string
+}
+
+func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err error) {
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(conf.Webhooks))
+	message := "CESS Information: " + " Alert Time: " + content.AlertTime + ", Host: " + content.HostIp + ", Miner Name: " + content.ContainerName + ", Description: " + content.Description
+	for _, url := range conf.Webhooks {
+		var hook WebhookSender
+		switch GetWebhookType(url) {
+		case "discord":
+			hook = &DiscordWebhook{url}
+		case "slack":
+			hook = &SlackWebhook{url}
+		case "teams":
+			hook = &TeamsWebhook{url}
+		case "lark":
+			hook = &LarkWebhook{url}
+		case "ding":
+			hook = &DingTalkWebhook{url}
+		case "wechat":
+			hook = &WechatWebhook{url}
+		default:
+			log.Logger.Warn("Unknown webhook type, cannot send webhook alert")
+			continue
+		}
+		wg.Add(1)
+		go func(h WebhookSender) {
+			defer wg.Done()
+			if err := h.SendMessage(message); err != nil {
+				errChan <- err
+			}
+		}(hook)
+		if err := hook.SendMessage(message); err != nil {
+			return err
+		}
+	}
+	wg.Wait()
+	close(errChan)
+	for err := range errChan {
+		if err != nil {
+			log.Logger.Errorf("Error sending webhook: %v", err)
+		}
+	}
 	return nil
 }
