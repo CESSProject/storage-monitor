@@ -22,7 +22,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             <ThemeModeScript/>
         </head>
         <body className={inter.className}>
-        <div className="w-screen h-screen dark:bg-black">
+        <div className="w-screen dark:bg-black">
             <LeftDrawer/>
             <div className="w-full flex-grow p-1 md:overflow-y-auto md:p-1 mb-auto">
                 <NavBar/>

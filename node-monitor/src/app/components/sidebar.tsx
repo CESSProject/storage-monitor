@@ -41,7 +41,7 @@ export function LeftDrawer() {
                                             Dashboard
                                         </Sidebar.Item>
                                         <Sidebar.Item href="/system" icon={HiComputerDesktop}>
-                                            System
+                                            Configuration
                                         </Sidebar.Item>
                                     </Sidebar.ItemGroup>
                                 </Sidebar.Items>

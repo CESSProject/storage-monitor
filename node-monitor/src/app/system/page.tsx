@@ -247,7 +247,7 @@ export default function Page() {
                     </Form.Item>
 
                     <Form.Item>
-                        <Button type="primary" htmlType="submit">
+                        <Button type="primary" htmlType="submit" style={{ position: 'absolute', right: 10, bottom: 10 }}>
                             Save
                         </Button>
                     </Form.Item>

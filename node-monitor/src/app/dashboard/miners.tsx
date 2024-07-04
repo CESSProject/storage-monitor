@@ -97,16 +97,26 @@ export default function Miners({host}: HostProp) {
                         <div className="overflow-x-auto overflow-y-auto w-full">
                             <Table>
                                 <Table.Head>
-                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Name</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px] preserve-case">Signature Account</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Status</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Declaration Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[180px] text-center preserve-case">Available Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Idle Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Used Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Total Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Claimed Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Create Time</Table.HeadCell>
+                                    <Table.HeadCell
+                                        className="w-[200px] text-center preserve-case">Name</Table.HeadCell>
+                                    <Table.HeadCell className="w-[200px] preserve-case">Signature
+                                        Account</Table.HeadCell>
+                                    <Table.HeadCell
+                                        className="w-[150px] text-center preserve-case">Status</Table.HeadCell>
+                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Declaration
+                                        Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[180px] text-center preserve-case">Available
+                                        Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Idle
+                                        Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Used
+                                        Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Total
+                                        Reward</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Claimed
+                                        Reward</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Create
+                                        Time</Table.HeadCell>
                                 </Table.Head>
 
                                 <Table.Body className="divide-y">
@@ -155,12 +165,20 @@ export default function Miners({host}: HostProp) {
                                 </Table.Body>
                             </Table>
                             <Modal
+                                mask={true}
+                                confirmLoading={true}
+                                footer={null}
                                 open={isModalVisible}
                                 onCancel={handleCancel}
                                 keyboard={true}
                                 onOk={handleCancel}
                                 maskClosable={true}
-                                width="50%"
+                                styles={{
+                                    body: {backgroundColor: 'darkgray'},
+                                    header: {backgroundColor: 'darkgray'},
+                                    content: {backgroundColor: 'darkgray'},
+                                }}
+                                width="60%"
                                 style={{maxWidth: '1200px'}}
                             >
                                 <MinerDescription miner={selectedMiner}></MinerDescription>
