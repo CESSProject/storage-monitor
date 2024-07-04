@@ -97,16 +97,16 @@ export default function Miners({host}: HostProp) {
                         <div className="overflow-x-auto overflow-y-auto w-full">
                             <Table>
                                 <Table.Head>
-                                    <Table.HeadCell className="w-[200px] text-center">Name</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px]">Signature Account</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Status</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px] text-center">Declaration Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[180px] text-center">Available Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Idle Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Used Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Total Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Used Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center">Create Time</Table.HeadCell>
+                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Name</Table.HeadCell>
+                                    <Table.HeadCell className="w-[200px] preserve-case">Signature Account</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Status</Table.HeadCell>
+                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Declaration Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[180px] text-center preserve-case">Available Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Idle Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Used Space</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Total Reward</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Claimed Reward</Table.HeadCell>
+                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Create Time</Table.HeadCell>
                                 </Table.Head>
 
                                 <Table.Body className="divide-y">
