@@ -3,9 +3,19 @@ export default function Footer() {
         <footer className="bg-white dark:bg-gray-900 w-full flex">
             <div className="flex md:flex-row justify-between items-start w-full bottom-0">
       <span className="text-sm text-gray-500 dark:text-gray-300 mb-4 md:mb-0 pl-20">
-        © 2024 <a href="https://cess.cloud/" className="hover:underline">CESS™</a>. All Rights Reserved.
+        © 2024 <a href="https://cess.cloud/" className="hover:underline">CESS™.</a>
       </span>
                 <div className="flex mt-4 sm:justify-center sm:mt-0 pr-20">
+                    <a href="https://t.me/CESS_Storage_official" target="_blank"
+                       className="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
+                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                             fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd"
+                                  d="M23.91 3.79L20.3 20.84c-.25 1.21-.98 1.5-2 .94l-5.5-4.07-2.66 2.57c-.3.3-.55.56-1.1.56-.72 0-.6-.27-.84-.95L6.3 13.7l-5.45-1.7c-1.18-.35-1.19-1.16.26-1.75l21.26-8.2c.97-.43 1.9.24 1.53 1.73z"
+                                  clipRule="evenodd"/>
+                        </svg>
+                        <span className="sr-only">Telegram</span>
+                    </a>
                     <a href="https://discord.com/invite/cess" target="_blank"
                        className="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
                         <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -34,16 +44,6 @@ export default function Footer() {
                                   clipRule="evenodd"/>
                         </svg>
                         <span className="sr-only">GitHub</span>
-                    </a>
-                    <a href="https://t.me/CESS_Storage_official" target="_blank"
-                       className="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
-                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                             fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd"
-                                  d="M23.91 3.79L20.3 20.84c-.25 1.21-.98 1.5-2 .94l-5.5-4.07-2.66 2.57c-.3.3-.55.56-1.1.56-.72 0-.6-.27-.84-.95L6.3 13.7l-5.45-1.7c-1.18-.35-1.19-1.16.26-1.75l21.26-8.2c.97-.43 1.9.24 1.53 1.73z"
-                                  clipRule="evenodd"/>
-                        </svg>
-                        <span className="sr-only">Telegram</span>
                     </a>
                 </div>
             </div>
