@@ -24,11 +24,13 @@ hosts:
     cert_path: /opt/cess/mineradm/watchdog/1.1.1.1/cert.pem
     key_path: /opt/cess/mineradm/watchdog/1.1.1.1/key.pem
 alert:
+  # enable alert or not
   enable: false
   webhook:
-    - https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
-    - https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_WEBHOOK_URL>
+    - https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+    - https://discordapp.com/api/webhooks/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   email:
+    # https://aws.amazon.com/what-is/smtp/
     smtp_endpoint: smtp.example.com
     smtp_port: 80
     smtp_account: myservice@cess.cloud
