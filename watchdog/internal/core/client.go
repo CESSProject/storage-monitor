@@ -106,7 +106,8 @@ func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
 func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	cli.Updating = true
 	interval := conf.ScrapeInterval
-	containers, err := cli.Client.ListContainers()
+	ctx := context.Background()
+	containers, err := cli.Client.ListContainers(ctx)
 
 	if err != nil {
 		log.Logger.Errorf("Error when listing %s containers: %v", cli.Host, err)
@@ -133,6 +134,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 			runningMiners[v.Name] = true
 		}
 		for key := range cli.MinerInfoMap {
+			// delete un-exist miner
 			if !runningMiners[key] {
 				delete(cli.MinerInfoMap, key)
 			}
@@ -140,7 +142,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
-			err = cli.SetContainerData(container)
+			err = cli.SetContainerData(ctx, container)
 			if err != nil {
 				errChan <- err
 			}
@@ -154,7 +156,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersStatsDataWG.Add(1)
 		go func(m *MinerInfo) {
 			defer setContainersStatsDataWG.Done()
-			res, err := cli.SetContainerStats(context.Background(), m.CInfo.ID)
+			res, err := cli.SetContainerStats(ctx, m.CInfo.ID)
 			if err != nil {
 				errChan <- err
 				return
@@ -183,8 +185,8 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	return nil
 }
 
-func (cli *WatchdogClient) SetContainerData(cinfo model.Container) error {
-	res, err := cli.ExeCommand(cinfo.ID, exeConf)
+func (cli *WatchdogClient) SetContainerData(ctx context.Context, cinfo model.Container) error {
+	res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf)
 	if err != nil {
 		log.Logger.Errorf("%s read config from /opt/miner/config.yaml failed in host: %s", cinfo.Name, cli.Host)
 		return err
