@@ -16,7 +16,7 @@ export default function NavBar() {
                     style={{width: '36', height: '24'}}
                 />
                 <span
-                    className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Storage Monitor</span>
+                    className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Storage Miner Monitor</span>
             </Navbar.Brand>
             <Navbar.Toggle/>
 
