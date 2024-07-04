@@ -135,19 +135,26 @@ func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err e
 		switch GetWebhookType(url) {
 		case "discord":
 			hook = &DiscordWebhook{url}
+			break
 		case "slack":
 			hook = &SlackWebhook{url}
+			break
 		case "teams":
 			hook = &TeamsWebhook{url}
+			break
 		case "lark":
 			hook = &LarkWebhook{url}
+			log.Logger.Errorf("hook:", hook)
+			break
 		case "ding":
 			hook = &DingTalkWebhook{url}
+			break
 		case "wechat":
 			hook = &WechatWebhook{url}
+			break
 		default:
 			log.Logger.Warn("Unknown webhook type, cannot send webhook alert")
-			continue
+			return nil
 		}
 		wg.Add(1)
 		go func(h WebhookSender) {
@@ -156,9 +163,6 @@ func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err e
 				errChan <- err
 			}
 		}(hook)
-		if err := hook.SendMessage(message); err != nil {
-			return err
-		}
 	}
 	wg.Wait()
 	close(errChan)
