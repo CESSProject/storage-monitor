@@ -65,8 +65,8 @@ func NewClient(host model.HostItem) (*Client, error) {
 	}
 }
 
-func (cli *Client) ListContainers() ([]model.Container, error) {
-	list, err := cli.dockerCli.ContainerList(context.Background(), types.ContainerListOptions{})
+func (cli *Client) ListContainers(ctx context.Context) ([]model.Container, error) {
+	list, err := cli.dockerCli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -96,20 +96,28 @@ func (cli *Client) ListContainers() ([]model.Container, error) {
 
 func (cli *Client) SetContainerStats(ctx context.Context, cid string) (model.ContainerStat, error) {
 	response, err := cli.dockerCli.ContainerStats(ctx, cid, false)
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			log.Logger.Errorf("Fail to close io reader: %v", err)
+		}
+	}(response.Body)
 	if err != nil {
+		log.Logger.Errorf("Fail to get container stats: %v", err)
 		return model.ContainerStat{}, nil
 	}
 	var v *types.StatsJSON
 	decoder := json.NewDecoder(response.Body)
 
 	if err = decoder.Decode(&v); err == io.EOF {
-		log.Logger.Errorf("Docker Container Stats API Response io.EOF")
+		log.Logger.Error("Docker Container Stats API Response io.EOF")
 		return model.ContainerStat{}, nil
 	} else if err != nil {
 		panic(err)
 	}
 	cpuPercent := calculateCPUPercentUnix(v)
-	memUsage := v.MemoryStats.Usage
+	// Usage must subtract cache-file-used
+	memUsage := v.MemoryStats.Usage - v.MemoryStats.Stats["file"]
 	memLimit := v.MemoryStats.Limit
 	memPercent := float64(memUsage) / float64(memLimit) * 100.0
 	res := model.ContainerStat{
@@ -138,8 +146,7 @@ func calculateCPUPercentUnix(v *types.StatsJSON) string {
 	return strconv.FormatFloat(cpuPercent, 'f', 2, 64)
 }
 
-func (cli *Client) ExeCommand(cid string, config types.ExecConfig) ([]byte, error) {
-	ctx := context.Background()
+func (cli *Client) ExeCommand(ctx context.Context, cid string, config types.ExecConfig) ([]byte, error) {
 	execId, err := cli.dockerCli.ContainerExecCreate(ctx, cid, config)
 	if err != nil {
 		return nil, errors.Wrap(err, "exe cmd in container error")
