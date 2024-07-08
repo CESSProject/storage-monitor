@@ -12,4 +12,4 @@ FROM alpine:3.18 AS runner
 COPY --from=builder /opt/monitor/watchdog ./watchdog
 ENTRYPOINT ["./watchdog"]
 
-# docker build cesslab/watchdog:latest .
+# docker build -t cesslab/watchdog:latest .

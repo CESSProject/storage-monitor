@@ -30,11 +30,10 @@ alert:
     - https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
     - https://discordapp.com/api/webhooks/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   email:
-    # https://aws.amazon.com/what-is/smtp/
     smtp_endpoint: smtp.example.com
     smtp_port: 80
     smtp_account: myservice@cess.cloud
     smtp_password: my_pwd
     receive_addr:
-      - "example1@gmail.com"
-      - "example2@outlook.com"
+      - example1@gmail.com
+      - example2@outlook.com

@@ -1,15 +1,10 @@
-FROM node:20.11.0
+FROM nginx:alpine
 
-WORKDIR /app
+COPY out /usr/share/nginx/html
 
-ENV NODE_ENV production
-ENV NEXT_PUBLIC_API_SERVER_URL=http://cess-monitor:13080
-
-COPY package.json package-lock.json* ./
-COPY public ./public
-COPY .next ./.next
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 13081
 
-CMD ["npm", "run", "start",  "--",  "--port", "13081"]
-# docker build -t cesslab/watchdog-web .
+# 启动 Nginx
+CMD ["nginx", "-g", "daemon off;"]
