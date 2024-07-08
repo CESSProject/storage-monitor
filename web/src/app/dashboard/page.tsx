@@ -8,7 +8,6 @@ export default function Page() {
     const [data, setData] = useState<HostModel[]>([]);
     const [filteredData, setFilteredData] = useState<HostModel[]>([]);
     const [search, setSearch] = useState<string>("");
-    const params = new URLSearchParams({host: search});
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
     };
@@ -19,7 +18,7 @@ export default function Page() {
     };
     const handleSearch = useCallback(async () => {
         try {
-            const response = await axios.get(`${getApiServerUrl()}/list?${params.toString()}`, {});
+            const response = await axios.get(`${getApiServerUrl()}/list?host=${search}`, {});
             if (!response.data) {
                 throw new Error(
                     "Server responded with an error. Please check the watchdog status or contact support."
@@ -29,9 +28,9 @@ export default function Page() {
             setData(data);
             setFilteredData(data);
         } catch (error) {
-            console.error("Failed to fetch data:", error);
+            console.error("Failed to fetch ", error);
         }
-    }, []);
+    }, [search]);
     useEffect(() => {
         handleSearch().then(r => console.log(r));
     }, [handleSearch]);
@@ -45,7 +44,7 @@ export default function Page() {
         } else {
             setFilteredData(data);
         }
-    }, [search]);
+    }, [search, data]);
     return (
         <Fragment>
             <section className="pl-12 pr-4 bg-white dark:bg-gray-900">
