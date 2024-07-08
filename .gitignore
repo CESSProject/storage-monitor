@@ -10,9 +10,8 @@ web/.pnp
 web/coverage
 
 # next.js
-web/.next
+web/.next/cache
 web/out/
-.idea
 
 # production
 web/build
@@ -35,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# .idea
+.idea
