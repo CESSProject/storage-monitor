@@ -10,8 +10,9 @@ web/.pnp
 web/coverage
 
 # next.js
-web/.next/cache
+web/.next
 web/out/
+.idea
 
 # production
 web/build
