@@ -1,14 +1,9 @@
 server:
+  # external: run with 0.0.0.0 or 127.0.0.1
+  external: true
   http:
     # watchdog server listen http port at: 13080
     http_port: 13080
-  https:
-    # watchdog server listen https port at: 13443 if crt/key file exist
-    cert_path: /opt/cess/mineradm/watchdog/server.crt
-    key_path: /opt/cess/mineradm/watchdog/server.key
-    https_port: 13443
-  # external: run with 0.0.0.0 or 127.0.0.1
-  external: true
 # the interval of query data from chain for each miner, 30 <= scrapeInterval <= 300
 scrapeInterval: 60
 hosts:

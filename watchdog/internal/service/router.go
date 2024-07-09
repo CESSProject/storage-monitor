@@ -17,7 +17,7 @@ func RegisterRoutes(r *gin.Engine) {
 	r.GET("/list", list)
 	r.GET("/hosts", getHosts)
 	r.GET("/clients", getClientsStatus)
-	r.Group("/").Use(safeConnectionOnly()).POST("/config", setConfig)
+	r.POST("/config", setConfig)
 	r.GET("/config", getConfig)
 	r.GET("/toggle", getToggle)
 	r.POST("/toggle", setToggle)
