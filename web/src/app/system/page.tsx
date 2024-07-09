@@ -124,15 +124,6 @@ export default function Page() {
                         <Form.Item name={['server', 'Http', 'http_port']} label="HTTP Port">
                             <InputNumber disabled/>
                         </Form.Item>
-                        <Form.Item name={['server', 'Https', 'https_port']} label="HTTPS Port">
-                            <InputNumber disabled/>
-                        </Form.Item>
-                        <Form.Item name={['server', 'Https', 'cert_path']} label="HTTPS Cert Path">
-                            <Input disabled/>
-                        </Form.Item>
-                        <Form.Item name={['server', 'Https', 'key_path']} label="HTTPS Key Path">
-                            <Input disabled/>
-                        </Form.Item>
                         <Form.Item name={['server', 'external']} label="External" valuePropName="checked">
                             <Switch disabled/>
                         </Form.Item>
@@ -212,10 +203,10 @@ export default function Page() {
                                 <InputNumber/>
                             </Form.Item>
                             <Form.Item name={['alert', 'Email', 'smtp_account']} label="SMTP Account">
-                                <Input/>
+                                <Input disabled/>
                             </Form.Item>
                             <Form.Item name={['alert', 'Email', 'smtp_password']} label="SMTP Password">
-                                <Input.Password/>
+                                <Input.Password disabled/>
                             </Form.Item>
                             <Form.Item label="Receivers">
                                 <Form.List name={['alert', 'Email', 'receiver']}>
