@@ -92,6 +92,11 @@ func setConfig(c *gin.Context) {
 	}
 	// remove old config
 	util.RemoveFields(configTemp, "hosts", "scrapeInterval", "alert")
+
+	// do not leak acc/password in unsafe(http without tls) network (keep acc/password as original conf)
+	newConfig.Alert.Email.SenderAddr = core.CustomConfig.Alert.Email.SenderAddr
+	newConfig.Alert.Email.SmtpPassword = core.CustomConfig.Alert.Email.SmtpPassword
+
 	// add new config
 	util.AddFields(configTemp, newConfig)
 	err = util.SaveConfigFile(constant.ConfPath, configTemp)
