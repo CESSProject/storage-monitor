@@ -13,9 +13,9 @@ hosts:
   - ip: 1.1.1.1
     # make sure docker daemon tls listen at 2376: https://docs.docker.com/engine/security/protect-access/
     port: 2376
-    ca_path: /opt/cess/mineradm/watchdog/1.1.1.1/ca.pem
-    cert_path: /opt/cess/mineradm/watchdog/1.1.1.1/cert.pem
-    key_path: /opt/cess/mineradm/watchdog/1.1.1.1/key.pem
+    ca_path: /opt/cess/watchdog/tls/1.1.1.1-ca.pem
+    cert_path: /opt/cess/watchdog/tls/1.1.1.1-cert.pem
+    key_path: /opt/cess/watchdog/tls/1.1.1.1-key.pem
 alert:
   # enable alert or not
   enable: false
