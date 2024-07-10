@@ -28,19 +28,8 @@ interface Alert {
     email: Email;
 }
 
-interface Http {
-    http_port: number
-}
-
-interface Https {
-    https_port: number;
-    cert_path: string;
-    key_path: string;
-}
-
 interface Server {
-    http: Http;
-    https: Https;
+    port: number;
     external: boolean;
 }
 
@@ -121,10 +110,10 @@ export default function Page() {
                       onFinish={onFinish}
                       layout="vertical">
                     <Form.Item>
-                        <Form.Item name={['server', 'Http', 'http_port']} label="HTTP Port">
+                        <Form.Item name="port" label="Port">
                             <InputNumber disabled/>
                         </Form.Item>
-                        <Form.Item name={['server', 'external']} label="External" valuePropName="checked">
+                        <Form.Item name="external" label="External" valuePropName="checked">
                             <Switch disabled/>
                         </Form.Item>
                     </Form.Item>
@@ -238,7 +227,7 @@ export default function Page() {
                     </Form.Item>
 
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" style={{ position: 'absolute', right: 10, bottom: 10 }}>
+                        <Button type="primary" htmlType="submit" style={{position: 'absolute', right: 10, bottom: 10}}>
                             Save
                         </Button>
                     </Form.Item>

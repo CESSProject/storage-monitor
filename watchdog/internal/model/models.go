@@ -65,12 +65,8 @@ type MinerConfigFile struct {
 }
 
 type YamlConfig struct {
-	Server struct {
-		External bool `yaml:"external" json:"external"`
-		Http     struct {
-			Port int `yaml:"http_port" json:"http_port"`
-		} `yaml:"http"`
-	} `yaml:"server" json:"server"`
+	External       bool       `yaml:"external" json:"external"`
+	Port           int        `yaml:"port" json:"port"`
 	Hosts          []HostItem `yaml:"hosts" json:"hosts"`
 	ScrapeInterval int        `yaml:"scrapeInterval" json:"scrapeInterval"`
 	Alert          struct {

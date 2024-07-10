@@ -1,9 +1,7 @@
-server:
-  # external: run with 0.0.0.0 or 127.0.0.1
-  external: true
-  http:
-    # watchdog server listen http port at: 13080
-    http_port: 13080
+# external: run with 0.0.0.0 or 127.0.0.1
+external: true
+# watchdog server listen http port at: 13081
+port: 13081
 # the interval of query data from chain for each miner, 30 <= scrapeInterval <= 300
 scrapeInterval: 60
 hosts:

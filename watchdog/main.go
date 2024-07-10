@@ -23,10 +23,10 @@ func main() {
 	router.Use(cors.New(corsConfig))
 	service.RegisterRoutes(router)
 	var httpPort string
-	if core.CustomConfig.Server.External {
-		httpPort = ":" + strconv.Itoa(core.CustomConfig.Server.Http.Port)
+	if core.CustomConfig.External {
+		httpPort = ":" + strconv.Itoa(core.CustomConfig.Port)
 	} else {
-		httpPort = "127.0.0.1:" + strconv.Itoa(core.CustomConfig.Server.Http.Port)
+		httpPort = "127.0.0.1:" + strconv.Itoa(core.CustomConfig.Port)
 	}
 	err := router.Run(httpPort)
 	if err != nil {
