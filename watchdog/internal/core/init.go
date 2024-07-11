@@ -43,7 +43,7 @@ func Run() {
 func InitWatchdogConfig() error {
 	yamlFile, err := os.ReadFile(constant.ConfPath)
 	if err != nil {
-		log.Logger.Fatalf("Error when read file from /opt/monitor/config.yaml: %v", err)
+		log.Logger.Fatalf("Error when read file from %s: %v", constant.ConfPath, err)
 		return err
 	}
 	CustomConfig = model.YamlConfig{}
@@ -54,7 +54,7 @@ func InitWatchdogConfig() error {
 	//For pointer types, the zero value is nil.
 	err = yaml.Unmarshal(yamlFile, &CustomConfig)
 	if err != nil {
-		log.Logger.Fatalf("Error when parse file from /opt/monitor/config.yaml: %v", err)
+		log.Logger.Fatalf("Error when parse file from %s: %v", constant.ConfPath, err)
 		return err
 	}
 	// 30 <= ScrapeInterval <= 300
