@@ -8,6 +8,6 @@ COPY .next/standalone ./
 COPY .next/static ./.next/static
 COPY .next/standalone/node_modules ./node_modules
 
-EXPOSE 13081
-ENV PORT 13081
+EXPOSE 13080
+ENV PORT 13080
 CMD HOSTNAME="0.0.0.0" node server.js
