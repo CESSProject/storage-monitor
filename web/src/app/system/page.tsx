@@ -71,10 +71,6 @@ export default function Page() {
         }
     }, [config, form]);
 
-    const onValuesChange = (allValues: Config) => {
-        setConfig(allValues);
-    };
-
     const onFinish = async (values: Config) => {
         try {
             const response = await axios.post(`${getApiServerUrl()}/config`, values, {
@@ -106,7 +102,6 @@ export default function Page() {
                     Watchdog Configuration
                 </Title>
                 <Form form={form}
-                      onValuesChange={onValuesChange}
                       onFinish={onFinish}
                       layout="vertical">
                     <Form.Item>
