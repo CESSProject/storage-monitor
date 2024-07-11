@@ -3,7 +3,8 @@ package constant
 const (
 	MinerImage       = "cesslab/cess-miner"
 	GenBlockInterval = 6 // unit: second
-	ConfPath         = "/opt/monitor/config.yaml"
+	ConfPath         = "/opt/cess/watchdog/config.yaml"
+	MinerConfPath    = "/opt/miner/config.yaml"
 	HttpMaxRetry     = 3
 	TimeFormat       = "2006-01-02 15:04:05"
 )
