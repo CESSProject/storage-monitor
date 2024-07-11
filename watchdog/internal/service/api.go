@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/core"
 	"github.com/CESSProject/watchdog/internal/log"
@@ -87,7 +88,7 @@ func setConfig(c *gin.Context) {
 	configTemp, err := util.LoadConfigFile(constant.ConfPath)
 	if err != nil {
 		log.Logger.Errorf("Fail to load %s", constant.ConfPath)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to load config file from /opt/monitor/config.yaml"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Fail to load config file from %s", constant.ConfPath)})
 		return
 	}
 	// remove old config
@@ -102,7 +103,7 @@ func setConfig(c *gin.Context) {
 	err = util.SaveConfigFile(constant.ConfPath, configTemp)
 	if err != nil {
 		log.Logger.Errorf("Fail to save file to: %v", constant.ConfPath)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to save config file to /opt/monitor/config.yaml"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Fail to save config file to %s", constant.ConfPath)})
 		return
 	}
 	log.Logger.Infof("Save new config %v to: %s", configTemp, constant.ConfPath)
@@ -166,7 +167,7 @@ func setToggle(c *gin.Context) {
 	err = os.WriteFile(constant.ConfPath, data, 0644)
 	if err != nil {
 		log.Logger.Errorf("Fail to save file to: %v", constant.ConfPath)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Fail to save config file to /opt/monitor/config.yaml"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Fail to save config file to %s", constant.ConfPath)})
 		return
 	}
 	core.CustomConfig.Alert.Enable = alertToggle.Status

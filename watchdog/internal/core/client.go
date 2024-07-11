@@ -188,7 +188,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 func (cli *WatchdogClient) SetContainerData(ctx context.Context, cinfo model.Container) error {
 	res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf)
 	if err != nil {
-		log.Logger.Errorf("%s read config from /opt/miner/config.yaml failed in host: %s", cinfo.Name, cli.Host)
+		log.Logger.Errorf("%s read config from container path: %s failed in host: %s", cinfo.Name, constant.MinerConfPath, cli.Host)
 		return err
 	}
 
