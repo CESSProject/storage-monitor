@@ -27,6 +27,6 @@ alert:
     smtp_port: 80
     smtp_account: myservice@cess.cloud
     smtp_password: my_pwd
-    receive_addr:
+    receiver:
       - example1@gmail.com
       - example2@outlook.com
