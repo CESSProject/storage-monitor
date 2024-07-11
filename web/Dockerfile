@@ -6,8 +6,9 @@ COPY package.json package-lock.json ./
 COPY public ./public
 COPY .next/standalone ./
 COPY .next/static ./.next/static
-COPY .next/standalone/node_modules ./node_modules
+COPY .next/server ./.next/server
 
 EXPOSE 13080
 ENV PORT 13080
-CMD HOSTNAME="0.0.0.0" node server.js
+ENV HOSTNAME "0.0.0.0"
+CMD node server.js
