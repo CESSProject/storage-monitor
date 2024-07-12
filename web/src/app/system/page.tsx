@@ -2,9 +2,10 @@
 import React, {useEffect, useState} from 'react';
 import {MinusCircleOutlined, PlusOutlined} from '@ant-design/icons';
 import {Button, Card, Form, Input, InputNumber, Switch, Typography} from 'antd';
-import {getApiServerUrl} from "@/utils";
 import {toast} from "sonner";
 import axios from "axios";
+import {env} from 'next-runtime-env'
+const API_URL = env('NEXT_PUBLIC_API_URL') || "http://localhost:13081"
 
 interface Hosts {
     ip: string;
@@ -50,7 +51,7 @@ export default function Page() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get(`${getApiServerUrl()}/config`, {});
+                const response = await axios.get(`${API_URL}/config`, {});
                 if (!response.data) throw new Error(
                     "Server responded with an error. Please check the server status or contact support."
                 );
@@ -73,7 +74,7 @@ export default function Page() {
 
     const onFinish = async (values: Config) => {
         try {
-            const response = await axios.post(`${getApiServerUrl()}/config`, values, {
+            const response = await axios.post(`${API_URL}/config`, values, {
                 headers: {
                     'Content-Type': 'application/json'
                 }

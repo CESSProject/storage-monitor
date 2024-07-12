@@ -1,8 +1,10 @@
 "use client";
 import React, {Fragment, useCallback, useEffect, useState} from "react";
 import Miners, {HostModel} from "./miners";
-import {getApiServerUrl} from "@/utils";
 import axios from "axios";
+import {env} from 'next-runtime-env'
+const API_URL = env('NEXT_PUBLIC_API_URL') || "http://localhost:13081"
+
 
 export default function Page() {
     const [data, setData] = useState<HostModel[]>([]);
@@ -18,7 +20,7 @@ export default function Page() {
     };
     const handleSearch = useCallback(async () => {
         try {
-            const response = await axios.get(`${getApiServerUrl()}/list?host=${search}`, {});
+            const response = await axios.get(`${API_URL}/list?host=${search}`, {});
             if (!response.data) {
                 throw new Error(
                     "Server responded with an error. Please check the watchdog status or contact support."

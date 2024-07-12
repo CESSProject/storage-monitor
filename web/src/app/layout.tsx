@@ -6,7 +6,7 @@ import {LeftDrawer} from "@/app/components/sidebar";
 import NavBar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import React from "react";
-
+import { PublicEnvScript } from 'next-runtime-env'
 const inter = Inter({subsets: ["latin"]});
 
 export const metadata: Metadata = {
@@ -18,6 +18,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
     return (
         <html lang="en" suppressHydrationWarning>
         <head>
+            <PublicEnvScript />
             <link rel="icon" href="/favicon.ico" type="image/x-icon"/>
             <ThemeModeScript/>
         </head>

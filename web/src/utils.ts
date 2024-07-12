@@ -1,9 +1,3 @@
-export const getApiServerUrl = () => {
-    // TODO: get the url from .env.local file
-    // const api_server_url = "http://localhost:3001";
-    return process.env.API_URL;
-}
-
 export function unixTimestampToDateFormat(timestamp: number) {
     // 2006-01-02 15:04:05
     // Create a new Date object, multiplying by 1000 to convert seconds to milliseconds
