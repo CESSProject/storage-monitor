@@ -12,7 +12,7 @@ The default port of the program in docker is 13080. You can map it to any port o
 Both watchdog and node-monitor can be deployed through docker containers, and only one command is needed to start each container. First, run the watchdog program on the server where you are running the storage node container with the following command:
 
 ```sh
- docker run -d --name watchdog  --volume=/opt/cess/mineradm/build/config.yaml:/opt/miner/config.yaml --volume=/var/run/docker.sock:/var/run/docker.sock cesslab/watchdog:latest
+ docker run -d --name watchdog -p 13081:13081 --volume=/opt/cess/mineradm/build/config.yaml:/opt/miner/config.yaml --volume=/var/run/docker.sock:/var/run/docker.sock cesslab/watchdog:latest
 ```
 
 In subsequent version iterations, we will continue to optimize the program and bring richer functions.
