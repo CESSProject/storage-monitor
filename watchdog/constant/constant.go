@@ -1,12 +1,14 @@
 package constant
 
 const (
-	MinerImage       = "cesslab/cess-miner"
-	GenBlockInterval = 6 // unit: second
-	ConfPath         = "/opt/cess/watchdog/config.yaml"
-	MinerConfPath    = "/opt/miner/config.yaml"
-	HttpMaxRetry     = 3
-	TimeFormat       = "2006-01-02 15:04:05"
+	MinerImage        = "cesslab/cess-miner"
+	GenBlockInterval  = 6 // unit: second
+	ConfPath          = "/opt/cess/watchdog/config.yaml"
+	MinerConfPath     = "/opt/miner/config.yaml"
+	HttpMaxRetry      = 3
+	HttpRetryWaitTime = 2
+	HttpTimeout       = 10
+	TimeFormat        = "2006-01-02 15:04:05"
 )
 
 const (
@@ -28,4 +30,8 @@ const (
 
 const (
 	HttpPostContentType = "application/json"
+)
+
+const (
+	AlertStaticPath = "/opt/cess/watchdog/alert/"
 )
