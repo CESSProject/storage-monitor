@@ -129,21 +129,19 @@ func (cli *Client) SetContainerStats(ctx context.Context, cid string) (model.Con
 }
 
 func calculateCPUPercentUnix(v *types.StatsJSON) string {
-	var (
-		cpuPercent  = 0.0
-		cpuDelta    = float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
-		systemDelta = float64(v.CPUStats.SystemUsage) - float64(v.PreCPUStats.SystemUsage)
-		onlineCPUs  = float64(v.CPUStats.OnlineCPUs)
-	)
+
+	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
+	systemDelta := float64(v.CPUStats.SystemUsage) - float64(v.PreCPUStats.SystemUsage)
+	onlineCPUs := float64(v.CPUStats.OnlineCPUs)
 
 	if onlineCPUs == 0.0 {
 		onlineCPUs = float64(len(v.CPUStats.CPUUsage.PercpuUsage))
 	}
 	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
+		cpuPercent := (cpuDelta / systemDelta) * onlineCPUs * 100.0
+		return strconv.FormatFloat(cpuPercent, 'f', 2, 64)
 	}
-	cpuPercent = cpuPercent * 100
-	return strconv.FormatFloat(cpuPercent, 'f', 2, 64)
+	return "0.00"
 }
 
 func (cli *Client) ExeCommand(ctx context.Context, cid string, config types.ExecConfig) ([]byte, error) {
