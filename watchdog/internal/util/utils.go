@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/CESSProject/cess-go-sdk/chain"
 	"github.com/CESSProject/watchdog/constant"
+	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -33,7 +34,7 @@ func TransferMinerInfoToMinerStat(info chain.MinerInfo) (model.MinerStat, error)
 	minerStat.IdleSpace = StorageSpaceUnitConversion(info.IdleSpace)
 	minerStat.ServiceSpace = StorageSpaceUnitConversion(info.ServiceSpace)
 	minerStat.LockSpace = StorageSpaceUnitConversion(info.LockSpace)
-	minerStat.IsPunished = make([][]bool, 0)
+	minerStat.LatestPunishInfo = model.PunishSminerData{}
 	return minerStat, nil
 }
 
@@ -155,4 +156,21 @@ func GetWebhookType(url string) string {
 	default:
 		return constant.Unknown
 	}
+}
+
+func GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		log.Logger.Errorf("Failed to get local network interface addresses: %v", err)
+		return ""
+	}
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	log.Logger.Errorf("Failed to get a valid local network interface addresses: %v", err)
+	return ""
 }

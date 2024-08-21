@@ -19,32 +19,40 @@ type SmtpConfig struct {
 
 func (conf *SmtpConfig) SendMail(content model.AlertContent) (err error) {
 
-	t, err := template.ParseFiles("./internal/util/template.html")
+	t, err := template.ParseFiles(constant.AlertStaticPath + "template.html")
 	if err != nil {
 		log.Logger.Errorf("Error parsing template: %v", err)
 		return err
 	}
 	var body bytes.Buffer
-	err = t.Execute(&body, content)
-	if err != nil {
+	if err = t.Execute(&body, content); err != nil {
 		log.Logger.Errorf("Error executing template: %v", err)
 		return err
 	}
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", conf.SenderAddr)
-
 	m.SetHeader("Subject: Storage Miner Status Alert!")
 	m.SetBody("text/html", body.String())
-	d := gomail.NewDialer(conf.SmtpUrl, 80, conf.SenderAddr, conf.SmtpPassword)
-	for i := 0; i < constant.HttpMaxRetry; i++ {
-		for _, receiver := range conf.Receiver {
-			m.SetHeader("To", receiver)
-			if err = d.DialAndSend(m); err != nil {
-				log.Logger.Warnf("Fail when send email: %v, retrying (%d/%d)\n", err, i+1, constant.HttpMaxRetry)
-			} else {
-				break
-			}
+	d := gomail.NewDialer(conf.SmtpUrl, conf.SmtpPort, conf.SenderAddr, conf.SmtpPassword)
+	for _, receiver := range conf.Receiver {
+		m.SetHeader("To", receiver)
+		if err = sendEmailWithRetry(d, m); err != nil {
+			log.Logger.Errorf("Failed to send email to: %v: %v, retrying %d times", m.GetHeader("To"), err, constant.HttpMaxRetry)
+		} else {
+			log.Logger.Infof("Successfully sent email to %s", receiver)
 		}
 	}
 	return
+}
+
+func sendEmailWithRetry(d *gomail.Dialer, m *gomail.Message) (err error) {
+	for i := 0; i < constant.HttpMaxRetry; i++ {
+		if err = d.DialAndSend(m); err != nil {
+			log.Logger.Warnf("Fail when send email to: %v : %v, retrying (%d/%d)\n", m.GetHeader("To"), err, i+1, constant.HttpMaxRetry)
+		} else {
+			break
+		}
+	}
+	return err
 }

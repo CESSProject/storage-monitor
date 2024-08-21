@@ -104,19 +104,17 @@ func sendWebhookRequest(url string, payload interface{}) error {
 		resp, err := http.Post(url, constant.HttpPostContentType, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			log.Logger.Warnf("Fail when request to webhook: %v, retrying (%d/%d)\n", err, j+1, constant.HttpMaxRetry)
-		} else {
-			if resp.StatusCode != http.StatusOK {
-				log.Logger.Warnf("Unexceptional response status code: %d", resp.StatusCode)
-			}
-			err := resp.Body.Close()
-			if err != nil {
-				return err
-			}
-			break
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			log.Logger.Warnf("Unexceptional response status code: %d", resp.StatusCode)
 		}
 		err = resp.Body.Close()
 		if err != nil {
 			return err
+		}
+		if resp.StatusCode == http.StatusOK {
+			break
 		}
 	}
 	return nil
@@ -144,7 +142,6 @@ func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err e
 			break
 		case "lark":
 			hook = &LarkWebhook{url}
-			log.Logger.Errorf("hook:", hook)
 			break
 		case "ding":
 			hook = &DingTalkWebhook{url}

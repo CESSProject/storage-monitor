@@ -30,8 +30,17 @@ const (
 
 const (
 	HttpPostContentType = "application/json"
+	ScanApiUrl          = "https://scan-api.cess.network"
+	DefaultDescription  = "The Storage Node is not in a positive status or has received punishment"
+	DefaultURL          = "https://scan.cess.network"
+	ScanAccountURL      = "https://scan.cess.network/account/"
+	ScanBlockURL        = "https://scan.cess.network/block/"
+	ScanExtrinsicURL    = "https://scan.cess.network/extrinsic/"
 )
 
 const (
-	AlertStaticPath = "/opt/cess/watchdog/alert/"
+	MinerStatus          = "Frozen"
+	NoSubmitSvcProof     = "NoSubmitSvcProof"
+	SvcProofResIncorrect = "SvcProofResIncorrect"
+	AlertStaticPath      = "/opt/cess/watchdog/alert/"
 )

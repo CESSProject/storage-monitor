@@ -13,6 +13,7 @@ type AlertContent struct {
 	HostIp        string
 	ContainerName string
 	Description   string
+	DetailUrl     string
 }
 
 type Container struct {
@@ -37,17 +38,17 @@ type ContainerStat struct {
 }
 
 type MinerStat struct {
-	PeerId           string   `json:"peer_id"`
-	Collaterals      string   `json:"collaterals"`
-	Debt             string   `json:"debt"`
-	Status           string   `json:"status"`            // positive, exit, frozen, unready(register on chain but no get a tag from tee)
-	DeclarationSpace string   `json:"declaration_space"` // unit: TiB
-	IdleSpace        string   `json:"idle_space"`
-	ServiceSpace     string   `json:"service_space"`
-	LockSpace        string   `json:"lock_space"` // upload file allocated to this miner but not get a proof from tee yet, it can be serviceSpace after get proof from tee
-	IsPunished       [][]bool `json:"is_punished"`
-	TotalReward      string   `json:"total_reward"`
-	RewardIssued     string   `json:"reward_issued"`
+	PeerId           string           `json:"peer_id"`
+	Collaterals      string           `json:"collaterals"`
+	Debt             string           `json:"debt"`
+	Status           string           `json:"status"`            // positive, exit, frozen, unready(register on chain but no get a tag from tee)
+	DeclarationSpace string           `json:"declaration_space"` // unit: TiB
+	IdleSpace        string           `json:"idle_space"`
+	ServiceSpace     string           `json:"service_space"`
+	LockSpace        string           `json:"lock_space"` // upload file allocated to this miner but not get a proof from tee yet, it can be serviceSpace after get proof from tee
+	LatestPunishInfo PunishSminerData `json:"punish_info_list"`
+	TotalReward      string           `json:"total_reward"`
+	RewardIssued     string           `json:"reward_issued"`
 }
 
 type MinerConfigFile struct {
@@ -84,4 +85,27 @@ type YamlConfig struct {
 
 type AlertToggle struct {
 	Status bool `name:"enable"`
+}
+
+type PunishSminerResponse struct {
+	Code int              `json:"code"`
+	Msg  string           `json:"msg"`
+	Data PunishSminerList `json:"data"`
+}
+
+type PunishSminerList struct {
+	Content []PunishSminerData `json:"content"`
+	Count   int                `json:"count"`
+}
+
+type PunishSminerData struct {
+	BlockId       uint32 `json:"block_id"`
+	ExtrinsicHash string `json:"extrinsic_hash"`
+	ExtrinsicName string `json:"extrinsic_name"`
+	BlockHash     string `json:"block_hash"`
+	Account       string `json:"account"`
+	RecvAccount   string `json:"recv_account"`
+	Amount        string `json:"amount"`
+	Type          uint8  `json:"type"` // 1:not submit service proof 2:service proof result is false
+	Timestamp     int64  `json:"timestamp"`
 }
