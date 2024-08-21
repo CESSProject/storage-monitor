@@ -28,6 +28,7 @@ func Run() {
 	}
 	InitSmtpConfig()
 	InitWebhookConfig()
+	util.InitHttpClient()
 	err = InitWatchdogClients(CustomConfig)
 	if err != nil {
 		log.Logger.Fatalf("Init CESS Node Monitor Service Failed: %v", err)
