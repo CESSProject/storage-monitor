@@ -17,7 +17,7 @@ type MinerInfoVO struct {
 
 var CustomConfig model.YamlConfig
 
-var SmtpConfigPoint *util.SmtpConfig
+var SmtpConfig *util.SmtpConfig
 var WebhooksConfig *util.WebhookConfig
 
 func Run() {
@@ -28,7 +28,6 @@ func Run() {
 	}
 	InitSmtpConfig()
 	InitWebhookConfig()
-	log.Logger.Infof("Service run with host %v", CustomConfig.Hosts)
 	err = InitWatchdogClients(CustomConfig)
 	if err != nil {
 		log.Logger.Fatalf("Init CESS Node Monitor Service Failed: %v", err)
@@ -52,14 +51,13 @@ func InitWatchdogConfig() error {
 	//For numeric types, the zero value is 0.
 	//For Boolean types, the zero value is false.
 	//For pointer types, the zero value is nil.
-	err = yaml.Unmarshal(yamlFile, &CustomConfig)
-	if err != nil {
+	if err := yaml.Unmarshal(yamlFile, &CustomConfig); err != nil {
 		log.Logger.Fatalf("Error when parse file from %s: %v", constant.ConfPath, err)
 		return err
 	}
 	// 30 <= ScrapeInterval <= 300
 	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 300)))
-	log.Logger.Infof("Init watchdog with config file: %v", CustomConfig)
+	log.Logger.Infof("Init watchdog with config file: %v \n", CustomConfig)
 	return nil
 }
 
@@ -71,7 +69,7 @@ func InitSmtpConfig() {
 		len(CustomConfig.Alert.Email.Receiver) == 0 {
 		return
 	}
-	SmtpConfigPoint = &util.SmtpConfig{
+	SmtpConfig = &util.SmtpConfig{
 		SmtpUrl:      CustomConfig.Alert.Email.SmtpEndpoint,
 		SmtpPort:     CustomConfig.Alert.Email.SmtpPort,
 		SenderAddr:   CustomConfig.Alert.Email.SenderAddr,

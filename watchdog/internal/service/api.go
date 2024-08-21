@@ -24,8 +24,7 @@ import (
 // @Success 200 {string} ok
 // @Router / [get]
 func healthCheck(c *gin.Context) {
-	res := "ok"
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, 0)
 }
 
 // watchdog godoc

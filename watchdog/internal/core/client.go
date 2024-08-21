@@ -45,9 +45,9 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 	Clients = make(map[string]*WatchdogClient, len(hosts))
 	var initClientsWG sync.WaitGroup
 	errChan := make(chan error, len(hosts))
-	for idx, host := range hosts {
+	for _, host := range hosts {
 		initClientsWG.Add(1)
-		go func(idx int, host model.HostItem) {
+		go func(host model.HostItem) {
 			defer initClientsWG.Done()
 			dockerClient, err := NewClient(host)
 			if dockerClient == nil {
@@ -65,7 +65,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 				Active:       true,
 			}
 			log.Logger.Infof("Create a docker client with host: %s successfully", host.IP)
-		}(idx, host)
+		}(host)
 	}
 	initClientsWG.Wait()
 	close(errChan)
@@ -74,37 +74,35 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 			return err
 		}
 	}
-	log.Logger.Info("Init Watchdog Clients Down")
+	log.Logger.Info("Init All Watchdog Clients Successfully")
 	return nil
 }
 
 func RunWatchdogClients(conf model.YamlConfig) error {
 	for hostIp, client := range Clients {
-		if client != nil {
-			log.Logger.Infof("Start to run task at %s", hostIp)
-			go client.RunWatchdogClient(conf)
+		if client == nil {
+			log.Logger.Warnf("Client for host %s is nil, skipping", hostIp)
+			continue
 		}
+		log.Logger.Infof("Start to run task at host: %s", hostIp)
+		go client.RunWatchdogClient(conf)
 	}
 	return nil
 }
 
 func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
-	for {
-		if cli.Active {
-			err := cli.start(conf)
-			if err != nil {
-				log.Logger.Warnf("Error when start %s watchdog client %v", cli.Host, err)
-			}
-		} else {
-			// gc will collect inactive clients
-			break
+	for cli.Active {
+		if err := cli.start(conf); err != nil {
+			log.Logger.Warnf("Error when start %s watchdog client %v", cli.Host, err)
 		}
 		time.Sleep(time.Duration(CustomConfig.ScrapeInterval) * time.Second) // scrape interval
 	}
+	// gc will collect inactive clients
 }
 
 func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	cli.Updating = true
+	defer func() { cli.Updating = false }()
 	interval := conf.ScrapeInterval
 	ctx := context.Background()
 	containers, err := cli.Client.ListContainers(ctx)
@@ -115,12 +113,12 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	}
 
 	errChan := make(chan error, len(containers))
-	done := make(chan bool)
+	done := make(chan struct{})
 	go func() {
-		for err = range errChan {
+		for err := range errChan {
 			log.Logger.Errorf("Error when %s task run: %v", cli.Host, err)
 		}
-		done <- true
+		close(done)
 	}()
 
 	// get miner info and miner config
@@ -142,8 +140,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
-			err = cli.SetContainerData(ctx, container)
-			if err != nil {
+			if err := cli.SetContainerData(ctx, container); err != nil {
 				errChan <- err
 			}
 		}(container)
@@ -156,14 +153,13 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersStatsDataWG.Add(1)
 		go func(m *MinerInfo) {
 			defer setContainersStatsDataWG.Done()
-			res, err := cli.SetContainerStats(ctx, m.CInfo.ID)
-			if err != nil {
+			if res, err := cli.SetContainerStats(ctx, m.CInfo.ID); err != nil {
 				errChan <- err
-				return
+			} else {
+				m.CInfo.CPUPercent = res.CPUPercent
+				m.CInfo.MemoryPercent = res.MemoryPercent
+				m.CInfo.MemoryUsage = res.MemoryUsage
 			}
-			m.CInfo.CPUPercent = res.CPUPercent
-			m.CInfo.MemoryPercent = res.MemoryPercent
-			m.CInfo.MemoryUsage = res.MemoryUsage
 		}(miner)
 	}
 	setContainersStatsDataWG.Wait()
@@ -174,12 +170,16 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setChainDataWG.Add(1)
 		go func(m *MinerInfo) {
 			defer setChainDataWG.Done()
-			m.MinerStat, _ = SetChainData(m.SignatureAcc, m.Conf.Rpc, m.Conf.Mnemonic, interval, cli.Host, m.Name)
-			cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
+			if minerStat, err := SetChainData(m.SignatureAcc, m.Conf.Rpc, m.Conf.Mnemonic, interval, m.Name, m.CInfo.Created); err != nil {
+				errChan <- err
+			} else {
+				m.MinerStat = minerStat
+				cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
+			}
 		}(miner)
 	}
 	setChainDataWG.Wait()
-	cli.Updating = false
+
 	close(errChan)
 	<-done
 	return nil
@@ -209,25 +209,28 @@ func (cli *WatchdogClient) SetContainerData(ctx context.Context, cinfo model.Con
 	//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
 	conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
 	if err != nil {
+		log.Logger.Errorf("Failed to parse storage node config file for container %s: %v", cinfo.Name, err)
 		return err
 	}
 
 	key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
 	if err != nil {
+		log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
 		return err
 	}
 
 	acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
 	if err != nil {
+		log.Logger.Errorf("Failed to encode public key as Cess account for container %s: %v", cinfo.Name, err)
 		return err
 	}
 	cli.mutex.Lock()
 	defer cli.mutex.Unlock()
-	if _, ok := cli.MinerInfoMap[cinfo.Name]; ok {
-		cli.MinerInfoMap[cinfo.Name].Name = conf.Name
-		cli.MinerInfoMap[cinfo.Name].SignatureAcc = acc
-		cli.MinerInfoMap[cinfo.Name].Conf = conf
-		cli.MinerInfoMap[cinfo.Name].CInfo = cinfo
+	if miner, ok := cli.MinerInfoMap[cinfo.Name]; ok {
+		miner.Name = conf.Name
+		miner.SignatureAcc = acc
+		miner.Conf = conf
+		miner.CInfo = cinfo
 	} else {
 		cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
 			Name:         conf.Name,

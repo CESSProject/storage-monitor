@@ -11,6 +11,7 @@ import (
 
 func main() {
 	core.Run()
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
 	corsConfig := cors.Config{
