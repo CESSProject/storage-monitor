@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -36,7 +37,9 @@ func healthCheck(c *gin.Context) {
 // @Router       /list  [get]
 func list(c *gin.Context) {
 	host := c.Query("host")
-	data := getListByCondition(host)
+	pageIndex, _ := strconv.Atoi(c.Query("pageindex"))
+	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
+	data, _ := getListByCondition(host, pageIndex, pageSize)
 	c.JSON(http.StatusOK, data)
 }
 
@@ -179,39 +182,58 @@ type MinerInfoVO struct {
 	MinerInfoList []core.MinerInfo
 }
 
-func getListByCondition(hostIp string) []MinerInfoVO {
+func getListByCondition(hostIp string, pageIndex int, pageSize int) ([]MinerInfoVO, error) {
 	var res []MinerInfoVO
+	var err error
+	if pageIndex <= 0 {
+		pageIndex = 1
+	}
+	if pageSize <= 0 || pageSize > 10 {
+		pageSize = 10
+	}
+	startIndex := (pageIndex - 1) * pageSize
+	endIndex := startIndex + pageSize
 	if hostIp != "" {
-		if _, ok := core.Clients[hostIp]; ok {
-			VO := MinerInfoVO{
-				Host:          hostIp,
-				MinerInfoList: getMinersListByClientInfo(core.Clients[hostIp].MinerInfoMap),
+		if client, ok := core.Clients[hostIp]; ok {
+			if client.MinerInfoMap != nil {
+				vo := MinerInfoVO{
+					Host:          hostIp,
+					MinerInfoList: getMinersListByClientInfo(client.MinerInfoMap),
+				}
+				for minerName := range vo.MinerInfoList {
+					vo.MinerInfoList[minerName].Conf.Mnemonic = ""
+				}
+				res = append(res, vo)
+			} else {
+				err = fmt.Errorf("client's MinerInfoMap is nil for host: %s", hostIp)
 			}
-			for minerName := range VO.MinerInfoList {
-				VO.MinerInfoList[minerName].Conf.Mnemonic = ""
-			}
-			res = make([]MinerInfoVO, 0)
-			res = append(res, VO)
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Host < res[j].Host
-			})
 		} else {
 			log.Logger.Warnf("Host IP not found: %s", hostIp)
 		}
 	} else {
-		res = make([]MinerInfoVO, 0)
+		res = make([]MinerInfoVO, 0, len(core.Clients))
 		for k, v := range core.Clients {
-			VO := MinerInfoVO{
-				Host:          k,
-				MinerInfoList: getMinersListByClientInfo(v.MinerInfoMap),
+			if v.MinerInfoMap != nil {
+				vo := MinerInfoVO{
+					Host:          k,
+					MinerInfoList: getMinersListByClientInfo(v.MinerInfoMap),
+				}
+				for minerName := range vo.MinerInfoList {
+					vo.MinerInfoList[minerName].Conf.Mnemonic = ""
+				}
+				res = append(res, vo)
 			}
-			res = append(res, VO)
 		}
-		sort.Slice(res, func(i, j int) bool {
-			return res[i].Host < res[j].Host
-		})
 	}
-	return res
+	if len(res) > endIndex {
+		res = res[startIndex:endIndex]
+	} else if len(res) > startIndex {
+		res = res[startIndex:]
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Host < res[j].Host
+	})
+	return res, err
 }
 
 func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.MinerInfo {
