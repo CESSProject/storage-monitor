@@ -6,8 +6,8 @@ const (
 	ConfPath          = "/opt/cess/watchdog/config.yaml"
 	MinerConfPath     = "/opt/miner/config.yaml"
 	HttpMaxRetry      = 3
-	HttpRetryWaitTime = 2
-	HttpTimeout       = 10
+	HttpRetryWaitTime = 5
+	HttpTimeout       = 30
 	TimeFormat        = "2006-01-02 15:04:05"
 )
 
@@ -36,6 +36,8 @@ const (
 	ScanAccountURL      = "https://scan.cess.network/account/"
 	ScanBlockURL        = "https://scan.cess.network/block/"
 	ScanExtrinsicURL    = "https://scan.cess.network/extrinsic/"
+	DefaultRpcUrl       = "wss://testnet-rpc.cess.network/ws/"
+	LocalRpcUrl         = "ws://127.0.0.1/ws/"
 )
 
 const (

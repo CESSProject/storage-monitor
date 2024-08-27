@@ -9,6 +9,7 @@ import (
 	"github.com/CESSProject/watchdog/internal/util"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/docker/docker/api/types"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -22,12 +23,14 @@ var exeConf = types.ExecConfig{
 }
 
 type WatchdogClient struct {
-	Host         string                // 127.0.0.1
-	*Client                            // docker cli
-	MinerInfoMap map[string]*MinerInfo // key: miner-name
-	Updating     bool                  // is miners data updating ?
-	Active       bool                  // sleep or run
-	mutex        sync.Mutex
+	Host                  string                // 127.0.0.1 or some ip else
+	*Client                                     // docker cli
+	*util.HTTPClient                            // http cli
+	*util.CessChainClient                       // cess chain cli
+	MinerInfoMap          map[string]*MinerInfo // key: miner-name
+	Updating              bool                  // is miners data updating ?
+	Active                bool                  // sleep or run
+	mutex                 sync.Mutex
 }
 
 var Clients = map[string]*WatchdogClient{} // key: hostIP
@@ -50,6 +53,8 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 		go func(host model.HostItem) {
 			defer initClientsWG.Done()
 			dockerClient, err := NewClient(host)
+			httpClient := util.NewHTTPClient()
+			chainClient := util.NewCessChainClient([]string{constant.DefaultRpcUrl, constant.LocalRpcUrl})
 			if dockerClient == nil {
 				return
 			}
@@ -58,11 +63,13 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 				return
 			}
 			Clients[host.IP] = &WatchdogClient{
-				Host:         host.IP,
-				Client:       dockerClient,
-				MinerInfoMap: make(map[string]*MinerInfo),
-				Updating:     false,
-				Active:       true,
+				Host:            host.IP,
+				Client:          dockerClient,
+				HTTPClient:      httpClient,
+				CessChainClient: chainClient,
+				MinerInfoMap:    make(map[string]*MinerInfo),
+				Updating:        false,
+				Active:          true,
 			}
 			log.Logger.Infof("Create a docker client with host: %s successfully", host.IP)
 		}(host)
@@ -165,20 +172,19 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	setContainersStatsDataWG.Wait()
 
 	// set miner's info on chain
-	var setChainDataWG sync.WaitGroup
+	// qps might be high when use goroutine to request scan server,
 	for _, miner := range cli.MinerInfoMap {
-		setChainDataWG.Add(1)
-		go func(m *MinerInfo) {
-			defer setChainDataWG.Done()
-			if minerStat, err := SetChainData(m.SignatureAcc, m.Conf.Rpc, m.Conf.Mnemonic, interval, m.Name, m.CInfo.Created); err != nil {
-				errChan <- err
-			} else {
-				m.MinerStat = minerStat
-				cli.MinerInfoMap[m.Name].MinerStat = m.MinerStat
-			}
-		}(miner)
+		source := rand.NewSource(time.Now().UnixNano())
+		r := rand.New(source)
+		sleepDuration := r.Intn(2) + 1
+		time.Sleep(time.Duration(sleepDuration) * time.Second)
+		if minerStat, err := cli.SetChainData(miner.SignatureAcc, miner.Conf.Rpc, miner.Conf.Mnemonic, interval, miner.Name, miner.CInfo.Created); err != nil {
+			errChan <- err
+		} else {
+			miner.MinerStat = minerStat
+			cli.MinerInfoMap[miner.Name].MinerStat = miner.MinerStat
+		}
 	}
-	setChainDataWG.Wait()
 
 	close(errChan)
 	<-done

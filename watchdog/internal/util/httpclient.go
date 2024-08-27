@@ -7,14 +7,8 @@ import (
 	"time"
 )
 
-var RestyHttpClient *HTTPClient
-
-func InitHttpClient() {
-	RestyHttpClient = NewHTTPClient()
-}
-
 type HTTPClient struct {
-	client *resty.Client
+	RestyDefaultHttpClient *resty.Client
 }
 
 func NewHTTPClient() *HTTPClient {
@@ -22,11 +16,11 @@ func NewHTTPClient() *HTTPClient {
 		SetRetryCount(constant.HttpMaxRetry).
 		SetRetryWaitTime(constant.HttpRetryWaitTime * time.Second).
 		SetTimeout(constant.HttpTimeout * time.Second)
-	return &HTTPClient{client: client}
+	return &HTTPClient{RestyDefaultHttpClient: client}
 }
 
 func (c *HTTPClient) Request(method, url string, body interface{}, result interface{}) error {
-	req := c.client.R().
+	req := c.RestyDefaultHttpClient.R().
 		SetBody(body).
 		SetResult(result)
 
