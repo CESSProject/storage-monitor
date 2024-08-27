@@ -28,7 +28,6 @@ func Run() {
 	}
 	InitSmtpConfig()
 	InitWebhookConfig()
-	util.InitHttpClient()
 	err = InitWatchdogClients(CustomConfig)
 	if err != nil {
 		log.Logger.Fatalf("Init CESS Node Monitor Service Failed: %v", err)
@@ -56,8 +55,8 @@ func InitWatchdogConfig() error {
 		log.Logger.Fatalf("Error when parse file from %s: %v", constant.ConfPath, err)
 		return err
 	}
-	// 30 <= ScrapeInterval <= 300
-	CustomConfig.ScrapeInterval = int(math.Max(30, math.Min(float64(CustomConfig.ScrapeInterval), 300)))
+	// 1800 <= ScrapeInterval <= 3600
+	CustomConfig.ScrapeInterval = int(math.Max(1800, math.Min(float64(CustomConfig.ScrapeInterval), 3600)))
 	log.Logger.Infof("Init watchdog with config file: %v \n", CustomConfig)
 	return nil
 }
