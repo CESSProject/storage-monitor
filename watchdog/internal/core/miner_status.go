@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"fmt"
 	"github.com/CESSProject/cess-go-sdk/utils"
 	"github.com/CESSProject/watchdog/constant"
@@ -12,39 +11,33 @@ import (
 	"sync"
 	"time"
 
-	cess "github.com/CESSProject/cess-go-sdk"
 	"github.com/pkg/errors"
 )
 
-func SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interval int, miner string, created int64) (model.MinerStat, error) {
+func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interval int, miner string, created int64) (model.MinerStat, error) {
 	var stat model.MinerStat
-	chainClient, err := cess.New(
-		context.Background(),
-		cess.ConnectRpcAddrs(rpcAddr),
-		cess.TransactionTimeout(time.Second*30),
-		cess.Mnemonic(mnemonic),
-	)
 	hostIP := util.GetLocalIP()
 	if hostIP == "" {
 		hostIP = "127.0.0.1"
 	}
-	if err != nil {
-		return model.MinerStat{}, errors.Wrap(err, "error when new a cess client")
-	}
+
 	publicKey, err := utils.ParsingPublickey(signatureAcc)
 	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when parse public key")
 	}
-	chainInfo, err := chainClient.QueryMinerItems(publicKey, -1)
+
+	chainInfo, err := cli.CessChainClient.CessClient.QueryMinerItems(publicKey, -1)
 	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when query miner stat from chain")
 	}
+
 	stat, err = util.TransferMinerInfoToMinerStat(chainInfo)
 	if err != nil {
 		log.Logger.Errorf("%s %s failed to transfer object format", hostIP, miner)
 		return model.MinerStat{}, err
 	}
-	latestBlockNumberUint32, err := chainClient.QueryBlockNumber("")
+
+	latestBlockNumberUint32, err := cli.CessChainClient.CessClient.QueryBlockNumber("")
 	if err != nil {
 		log.Logger.Errorf("%s %s failed to query latest block latestBlockNumberUint32", hostIP, miner)
 		return stat, errors.Wrap(err, "failed to query latest block latestBlockNumberUint32")
@@ -54,7 +47,7 @@ func SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interv
 		go alert(hostIP, miner, constant.MinerStatus, signatureAcc, "", latestBlockNumberUint32)
 	}
 
-	reward, err := chainClient.QueryRewardMap(publicKey, -1)
+	reward, err := cli.CessChainClient.CessClient.QueryRewardMap(publicKey, -1)
 	if err != nil {
 		log.Logger.Errorf("%s %s failed to query reward from chain", hostIP, miner)
 		return stat, errors.Wrap(err, "failed to query reward from chain")
@@ -68,14 +61,15 @@ func SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interv
 
 	scanApiUrl := fmt.Sprintf("%s/sminer/punishment?Acc=%s&pageindex=1&pagesize=1", constant.ScanApiUrl, signatureAcc)
 	var response model.PunishSminerResponse
-	err = util.RestyHttpClient.Get(scanApiUrl, &response)
+
+	err = cli.HTTPClient.Get(scanApiUrl, &response)
 	if err != nil {
 		log.Logger.Errorf("%s %s failed to query punishment from scan api", hostIP, miner)
 		return stat, err
 	}
 	if response.Data.Count > 0 {
 		scanApiUrl = fmt.Sprintf("%s/sminer/punishment?Acc=%s&pageindex=%d&pagesize=1", constant.ScanApiUrl, signatureAcc, response.Data.Count)
-		err = util.RestyHttpClient.Get(scanApiUrl, &response)
+		err = cli.HTTPClient.Get(scanApiUrl, &response)
 		if err != nil {
 			log.Logger.Errorf("%s %s failed to query punishment from scan api", hostIP, miner)
 			return stat, err
