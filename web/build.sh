@@ -11,4 +11,5 @@ fi
 nvm install 20.11.0 && nvm use 20.11.0
 
 npm install && npm run build
-docker build -t cesslab/watchdog-web:latest .
+docker build -t cesslab/watchdog-web:"$1" .
+docker tag cesslab/watchdog-web:"$1" cesslab/watchdog-web:latest

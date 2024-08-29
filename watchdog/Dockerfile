@@ -1,7 +1,7 @@
 FROM golang:1.20-alpine3.18 AS builder
 
 ARG go_proxy
-ENV GOPROXY ${go_proxy}
+ENV GOPROXY=${go_proxy}
 
 WORKDIR /opt/cess/watchdog
 
@@ -13,5 +13,3 @@ WORKDIR /opt/cess/watchdog
 COPY --from=builder /opt/cess/watchdog/watchdog ./watchdog
 COPY --from=builder /opt/cess/watchdog/internal/util/template.html ./alert/
 ENTRYPOINT ["./watchdog"]
-
-# docker build -t cesslab/watchdog:latest .
