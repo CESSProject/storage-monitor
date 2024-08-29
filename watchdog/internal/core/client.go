@@ -108,6 +108,8 @@ func (cli *WatchdogClient) RunWatchdogClient(conf model.YamlConfig) {
 }
 
 func (cli *WatchdogClient) start(conf model.YamlConfig) error {
+	// make sure each client do not start at the same time to prevent from being overloaded
+	sleepAFewSeconds()
 	cli.Updating = true
 	defer func() { cli.Updating = false }()
 	interval := conf.ScrapeInterval
@@ -174,10 +176,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	// set miner's info on chain
 	// qps might be high when use goroutine to request scan server,
 	for _, miner := range cli.MinerInfoMap {
-		source := rand.NewSource(time.Now().UnixNano())
-		r := rand.New(source)
-		sleepDuration := r.Intn(2) + 1
-		time.Sleep(time.Duration(sleepDuration) * time.Second)
+		sleepAFewSeconds()
 		if minerStat, err := cli.SetChainData(miner.SignatureAcc, miner.Conf.Rpc, miner.Conf.Mnemonic, interval, miner.Name, miner.CInfo.Created); err != nil {
 			errChan <- err
 		} else {
@@ -189,6 +188,13 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	close(errChan)
 	<-done
 	return nil
+}
+
+func sleepAFewSeconds() {
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	sleepDuration := r.Intn(2) + 1
+	time.Sleep(time.Duration(sleepDuration) * time.Second)
 }
 
 func (cli *WatchdogClient) SetContainerData(ctx context.Context, cinfo model.Container) error {
