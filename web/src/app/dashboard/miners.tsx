@@ -54,9 +54,21 @@ interface MinerStatModel {
     idle_space: number;
     service_space: number;
     lock_space: number;
-    is_punished: boolean[][];
+    is_punished: PunishmentModel;
     total_reward: number;
     reward_issued: number;
+}
+
+interface PunishmentModel {
+    block_id: number;
+    extrinsic_hash: string;
+    extrinsic_name: string;
+    block_hash: string;
+    account: string;
+    recv_account: string;
+    amount: string;
+    type: number;
+    timestamp: number;
 }
 
 export interface MinerInfoListModel {
@@ -65,6 +77,31 @@ export interface MinerInfoListModel {
     Conf: ConfModel;
     CInfo: CInfoModel;
     MinerStat: MinerStatModel;
+}
+
+function naturalSort(a: string, b: string): number {
+    const regex = /(\d+)|(\D+)/g;
+    const aParts = a.match(regex) || [];
+    const bParts = b.match(regex) || [];
+    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+        const aPart = aParts[i];
+        const bPart = bParts[i];
+        let result = 0;
+        if (aPart !== bPart) {
+            const aIsNumber = !isNaN(Number(aPart));
+            const bIsNumber = !isNaN(Number(bPart));
+
+            if (aIsNumber && bIsNumber) {
+                result = Number(aPart) - Number(bPart);
+            } else {
+                result = aPart.localeCompare(bPart);
+            }
+        }
+        if (result !== 0) {
+            return result;
+        }
+    }
+    return aParts.length - bParts.length;
 }
 
 export default function Miners({host}: HostProp) {
@@ -82,6 +119,40 @@ export default function Miners({host}: HostProp) {
         setIsModalVisible(false);
         setSelectedMiner(emptyConf);
     };
+
+    function renderTableRow(miner: MinerInfoListModel) {
+        return (
+            <Table.Row key={miner.SignatureAcc} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                <Table.Cell
+                    className="text-center font-medium text-blue-600 dark:text-blue-500"
+                    onClick={() => showModal(miner)}
+                >
+                    {miner.Name}
+                </Table.Cell>
+                <Table.Cell className="w-24 text-blue-600 dark:text-blue-500" onClick={() => showModal(miner)}>
+                    {miner.SignatureAcc}
+                </Table.Cell>
+                <Table.Cell className="text-center">
+                    {miner.MinerStat.status === "positive" ? (
+                        <Badge color="success" icon={HiCheck}>
+                            Running
+                        </Badge>
+                    ) : (
+                        <Badge color="failure" icon={HiX}>
+                            Stop
+                        </Badge>
+                    )}
+                </Table.Cell>
+                <Table.Cell className="text-center">{miner.MinerStat.declaration_space}</Table.Cell>
+                <Table.Cell className="text-center">{miner.Conf.UseSpace} GiB</Table.Cell>
+                <Table.Cell className="text-center">{miner.MinerStat.idle_space}</Table.Cell>
+                <Table.Cell className="text-center">{miner.MinerStat.service_space}</Table.Cell>
+                <Table.Cell className="text-center">{miner.MinerStat.total_reward}</Table.Cell>
+                <Table.Cell className="text-center">{miner.MinerStat.reward_issued}</Table.Cell>
+                <Table.Cell className="text-center">{unixTimestampToDateFormat(miner.CInfo.created)}</Table.Cell>
+            </Table.Row>
+        );
+    }
 
     return (
         <Fragment>
@@ -120,48 +191,11 @@ export default function Miners({host}: HostProp) {
                                 </Table.Head>
 
                                 <Table.Body className="divide-y">
-                                    {host.MinerInfoList
-                                        ?.sort((a, b) => a.Name.localeCompare(b.Name))
-                                        .map((miner) => {
-                                            return (
-                                                <Table.Row key={miner.SignatureAcc}
-                                                           className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                                                    <Table.Cell
-                                                        className="text-center font-medium text-blue-600 dark:text-blue-500"
-                                                        onClick={() => showModal(miner)}
-                                                    >
-                                                        {miner.Name}
-                                                    </Table.Cell>
-                                                    <Table.Cell className="w-24 text-blue-600 dark:text-blue-500"
-                                                                onClick={() => showModal(miner)}>{miner.SignatureAcc}</Table.Cell>
-                                                    <Table.Cell className="text-center">
-                                                        {miner.MinerStat.status === "positive" ? (
-                                                            <Badge color="success" icon={HiCheck}>
-                                                                Running
-                                                            </Badge>
-                                                        ) : (
-                                                            <Badge color="failure" icon={HiX}>
-                                                                Stop
-                                                            </Badge>
-                                                        )}
-                                                    </Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.MinerStat.declaration_space}</Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.Conf.UseSpace} GiB</Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.MinerStat.idle_space}</Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.MinerStat.service_space}</Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.MinerStat.total_reward} </Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{miner.MinerStat.reward_issued} </Table.Cell>
-                                                    <Table.Cell
-                                                        className="text-center">{unixTimestampToDateFormat(miner.CInfo.created)}</Table.Cell>
-                                                </Table.Row>
-                                            );
-                                        })}
+                                    {host?.MinerInfoList
+                                        ? host.MinerInfoList
+                                            .sort((a, b) => naturalSort(a.Name, b.Name))
+                                            .map(renderTableRow)
+                                        : null}
                                 </Table.Body>
                             </Table>
                             <Modal

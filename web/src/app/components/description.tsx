@@ -37,7 +37,7 @@ const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): Description
                 </p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Rpc: </strong>{minerInfo.Conf.Rpc}</p>
+                    className="text-sm font-bold text-gray-900 dark:text-black">Rpc: </strong>{minerInfo.Conf.Rpc.join(', ')}</p>
                 <Divider></Divider>
                 <p><strong
                     className="text-sm font-bold text-gray-900 dark:text-black">Use Space: </strong>{minerInfo.Conf.UseSpace}GiB
