@@ -1,12 +1,19 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN npm install
+RUN npm run build
+
+
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
-COPY public ./public
-COPY .next/standalone ./
-COPY .next/static ./.next/static
-COPY .next/server ./.next/server
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/server ./.next/server
 
 EXPOSE 13080
 ENV PORT=13080

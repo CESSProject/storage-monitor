@@ -16,3 +16,5 @@ Both watchdog and node-monitor can be deployed through docker containers, and on
 ```
 
 In subsequent version iterations, we will continue to optimize the program and bring richer functions.
+
+Doc: https://doc.cess.network/cess-miners/storage-miner/multi-miner
