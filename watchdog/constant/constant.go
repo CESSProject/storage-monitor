@@ -36,8 +36,8 @@ const (
 	ScanAccountURL      = "https://scan.cess.network/account/"
 	ScanBlockURL        = "https://scan.cess.network/block/"
 	ScanExtrinsicURL    = "https://scan.cess.network/extrinsic/"
-	DefaultRpcUrl       = "wss://testnet-rpc.cess.network/ws/"
-	LocalRpcUrl         = "ws://127.0.0.1/ws/"
+	DefaultRpcUrl       = "wss://testnet-rpc.cess.network"
+	LocalRpcUrl         = "ws://127.0.0.1:9944"
 )
 
 const (
