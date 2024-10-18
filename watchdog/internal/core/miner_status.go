@@ -27,7 +27,7 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, m
 	}
 
 	chainInfo, err := cli.CessChainClient.CessClient.QueryMinerItems(publicKey, -1)
-	if err != nil {
+	if err != nil && chainInfo.State == nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when query miner stat from chain")
 	}
 
@@ -71,7 +71,7 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, m
 		scanApiUrl = fmt.Sprintf("%s/sminer/punishment?Acc=%s&pageindex=%d&pagesize=1", constant.ScanApiUrl, signatureAcc, response.Data.Count)
 		err = cli.HTTPClient.Get(scanApiUrl, &response)
 		if err != nil {
-			log.Logger.Errorf("%s %s failed to query punishment from scan api", hostIP, miner)
+			log.Logger.Errorf("%s %s failed to query punishment from scan api server", hostIP, miner)
 			return stat, err
 		}
 		stat.LatestPunishInfo = response.Data.Content[0]
