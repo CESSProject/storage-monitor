@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -33,13 +32,11 @@ func healthCheck(c *gin.Context) {
 // @Tags         List Miners by host
 // @Produce      json
 // @Param        host   query  string   false  "Host IP"
-// @Success      200  {object}  []MinerInfoVO
+// @Success      200  {object}  []HostInfoVO
 // @Router       /list  [get]
 func list(c *gin.Context) {
 	host := c.Query("host")
-	pageIndex, _ := strconv.Atoi(c.Query("pageindex"))
-	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
-	data, _ := getListByCondition(host, pageIndex, pageSize)
+	data, _ := getListByCondition(host)
 	c.JSON(http.StatusOK, data)
 }
 
@@ -53,6 +50,7 @@ func getHosts(c *gin.Context) {
 	for hostIP := range core.Clients {
 		res = append(res, hostIP)
 	}
+	sort.Strings(res)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -177,26 +175,23 @@ func setToggle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "updateConfig alert status success"})
 }
 
-type MinerInfoVO struct {
+type HostInfoVO struct {
 	Host          string
 	MinerInfoList []core.MinerInfo
 }
 
-func getListByCondition(hostIp string, pageIndex int, pageSize int) ([]MinerInfoVO, error) {
-	var res []MinerInfoVO
+func getListByCondition(hostIp string) ([]HostInfoVO, error) {
+	var res []HostInfoVO
 	var err error
-	if pageIndex <= 0 {
-		pageIndex = 1
+	keys := make([]string, 0, len(core.Clients))
+	for k := range core.Clients {
+		keys = append(keys, k)
 	}
-	if pageSize <= 0 || pageSize > 10 {
-		pageSize = 10
-	}
-	startIndex := (pageIndex - 1) * pageSize
-	endIndex := startIndex + pageSize
+	sort.Strings(keys)
 	if hostIp != "" {
 		if client, ok := core.Clients[hostIp]; ok {
 			if client.MinerInfoMap != nil {
-				vo := MinerInfoVO{
+				vo := HostInfoVO{
 					Host:          hostIp,
 					MinerInfoList: getMinersListByClientInfo(client.MinerInfoMap),
 				}
@@ -211,12 +206,12 @@ func getListByCondition(hostIp string, pageIndex int, pageSize int) ([]MinerInfo
 			log.Logger.Warnf("Host IP not found: %s", hostIp)
 		}
 	} else {
-		res = make([]MinerInfoVO, 0, len(core.Clients))
-		for k, v := range core.Clients {
-			if v.MinerInfoMap != nil {
-				vo := MinerInfoVO{
+		res = make([]HostInfoVO, 0, len(core.Clients))
+		for _, k := range keys {
+			if core.Clients[k].MinerInfoMap != nil {
+				vo := HostInfoVO{
 					Host:          k,
-					MinerInfoList: getMinersListByClientInfo(v.MinerInfoMap),
+					MinerInfoList: getMinersListByClientInfo(core.Clients[k].MinerInfoMap),
 				}
 				for minerName := range vo.MinerInfoList {
 					vo.MinerInfoList[minerName].Conf.Mnemonic = ""
@@ -224,15 +219,10 @@ func getListByCondition(hostIp string, pageIndex int, pageSize int) ([]MinerInfo
 				res = append(res, vo)
 			}
 		}
+		sort.Slice(res, func(i, j int) bool {
+			return res[i].Host < res[j].Host
+		})
 	}
-	if len(res) > endIndex {
-		res = res[startIndex:endIndex]
-	} else if len(res) > startIndex {
-		res = res[startIndex:]
-	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].Host < res[j].Host
-	})
 	return res, err
 }
 
@@ -246,7 +236,7 @@ func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.Miner
 }
 
 func replaceFirstThreeChars(s string) string {
-	// 123456@cess.cloud -> ***456@cess.cloud
+	// 123456@cess.network -> ***456@cess.network
 	if len(s) < 5 {
 		return s
 	}
