@@ -2,8 +2,8 @@
 external: true
 # watchdog server listen http port at: 13081
 port: 13081
-# the interval of query data from chain for each miner, 30 <= scrapeInterval <= 300
-scrapeInterval: 60
+# the interval of query data from chain for each miner, 1800 <= scrapeInterval <= 3600
+scrapeInterval: 1800
 hosts:
   - ip: 127.0.0.1
     # make sure docker daemon listen at 2375: https://docs.docker.com/config/daemon/remote-access/
@@ -25,7 +25,7 @@ alert:
   email:
     smtp_endpoint: smtp.example.com
     smtp_port: 80
-    smtp_account: myservice@cess.cloud
+    smtp_account: myservice@cess.network
     smtp_password: my_pwd
     receiver:
       - example1@gmail.com
