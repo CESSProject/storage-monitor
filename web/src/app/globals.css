@@ -5,3 +5,22 @@
 .preserve-case {
     text-transform: none !important;
 }
+
+.ant-table {
+    @apply bg-white dark:bg-gray-800;
+}
+
+.ant-table-thead > tr > th {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200;
+}
+
+.ant-table-tbody > tr > td {
+    @apply bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200;
+}
+
+.ant-table-tbody > tr:hover > td {
+    @apply bg-gray-50 dark:bg-gray-700;
+}
+.ant-select-dropdown {
+    @apply dark:bg-gray-800;
+}

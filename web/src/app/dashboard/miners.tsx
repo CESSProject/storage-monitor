@@ -1,8 +1,7 @@
 import React, {Fragment, useState} from "react";
-import {Badge, Table} from "flowbite-react";
+import {Badge, Modal, Table} from "antd";
 import MinerDescription from "@/app/components/description";
-import {Modal} from "antd";
-import {HiCheck, HiX} from "react-icons/hi";
+import {CheckCircleOutlined, CloseCircleOutlined} from "@ant-design/icons";
 import {unixTimestampToDateFormat} from "@/utils";
 
 export interface HostModel {
@@ -105,118 +104,130 @@ function naturalSort(a: string, b: string): number {
 }
 
 export default function Miners({host}: HostProp) {
-
-
     const emptyConf = {} as MinerInfoListModel;
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedMiner, setSelectedMiner] = useState<MinerInfoListModel>(emptyConf);
+
     const showModal = (miner: MinerInfoListModel) => {
         setSelectedMiner(miner);
         setIsModalVisible(true);
     };
+
     const handleCancel = () => {
         setIsModalVisible(false);
         setSelectedMiner(emptyConf);
     };
 
-    function renderTableRow(miner: MinerInfoListModel) {
-        return (
-            <Table.Row key={miner.SignatureAcc} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                <Table.Cell
-                    className="text-center font-medium text-blue-600 dark:text-blue-500"
-                    onClick={() => showModal(miner)}
+    const columns = [
+        {
+            title: "Name",
+            dataIndex: "Name",
+            key: "Name",
+            align: "center" as const,
+            render: (text: string, record: MinerInfoListModel) => (
+                <span className="text-blue-600 dark:text-blue-500 cursor-pointer"
+                      onClick={() => showModal(record)}>{text}</span>
+            ),
+        },
+        {
+            title: () => <div style={{textAlign: 'left'}}>Signature Account</div>,
+            dataIndex: "SignatureAcc",
+            key: "SignatureAcc",
+            align: "left" as const,
+            width: 250,
+            render: (text: string, record: MinerInfoListModel) => (
+                <span
+                    className="text-blue-600 dark:text-blue-500 cursor-pointer"
+                    onClick={() => showModal(record)}
                 >
-                    {miner.Name}
-                </Table.Cell>
-                <Table.Cell className="w-24 text-blue-600 dark:text-blue-500" onClick={() => showModal(miner)}>
-                    {miner.SignatureAcc}
-                </Table.Cell>
-                <Table.Cell className="text-center">
-                    {miner.MinerStat.status === "positive" ? (
-                        <Badge color="success" icon={HiCheck}>
-                            Running
-                        </Badge>
-                    ) : (
-                        <Badge color="failure" icon={HiX}>
-                            Stop
-                        </Badge>
-                    )}
-                </Table.Cell>
-                <Table.Cell className="text-center">{miner.MinerStat.declaration_space}</Table.Cell>
-                <Table.Cell className="text-center">{miner.Conf.UseSpace} GiB</Table.Cell>
-                <Table.Cell className="text-center">{miner.MinerStat.idle_space}</Table.Cell>
-                <Table.Cell className="text-center">{miner.MinerStat.service_space}</Table.Cell>
-                <Table.Cell className="text-center">{miner.MinerStat.total_reward}</Table.Cell>
-                <Table.Cell className="text-center">{miner.MinerStat.reward_issued}</Table.Cell>
-                <Table.Cell className="text-center">{unixTimestampToDateFormat(miner.CInfo.created)}</Table.Cell>
-            </Table.Row>
-        );
-    }
+                        {text}
+                    </span>
+            ),
+        },
+        {
+            title: "Status",
+            dataIndex: ["MinerStat", "status"],
+            key: "status",
+            align: "center" as const,
+            render: (status: string) => (
+                status === "positive" ? (
+                    <Badge status="success" text="Running" icon={<CheckCircleOutlined/>}/>
+                ) : (
+                    <Badge status="error" text="Stop" icon={<CloseCircleOutlined/>}/>
+                )
+            ),
+        },
+        {
+            title: "Declaration Space",
+            dataIndex: ["MinerStat", "declaration_space"],
+            key: "declaration_space",
+            align: "center" as const,
+        },
+        {
+            title: "Idle Space",
+            dataIndex: ["MinerStat", "idle_space"],
+            key: "idle_space",
+            align: "center" as const,
+        },
+        {
+            title: "Used Space",
+            dataIndex: ["MinerStat", "service_space"],
+            key: "service_space",
+            align: "center" as const,
+        },
+        {
+            title: "Total Reward",
+            dataIndex: ["MinerStat", "total_reward"],
+            key: "total_reward",
+            align: "center" as const,
+        },
+        {
+            title: "Claimed Reward",
+            dataIndex: ["MinerStat", "reward_issued"],
+            key: "reward_issued",
+            align: "center" as const,
+        },
+        {
+            title: "Create Time",
+            dataIndex: ["CInfo", "created"],
+            key: "created",
+            align: "center" as const,
+            render: (created: number) => unixTimestampToDateFormat(created),
+        },
+    ];
+
 
     return (
         <Fragment>
-            <section className="pl-12 pr-4 bg-white dark:bg-gray-900">
+            <section className="pl-12 pr-4 pt-0 bg-white dark:bg-gray-900">
                 <div className="py-8 px-4 mx-auto max-w-full">
-                    <h1 className="mb-4 text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-2xl dark:text-white">
-                        <mark
-                            className="px-2 text-white bg-blue-600 rounded dark:bg-blue-500">Host
-                        </mark>
-                        &nbsp;&nbsp; {host.Host}
-                    </h1>
-                    <div className=" w-full space-y-4 sm:flex-row sm:justify-center sm:space-y-0 ">
-                        <div className="overflow-x-auto overflow-y-auto w-full">
-                            <Table>
-                                <Table.Head>
-                                    <Table.HeadCell
-                                        className="w-[200px] text-center preserve-case">Name</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px] preserve-case">Signature
-                                        Account</Table.HeadCell>
-                                    <Table.HeadCell
-                                        className="w-[150px] text-center preserve-case">Status</Table.HeadCell>
-                                    <Table.HeadCell className="w-[200px] text-center preserve-case">Declaration
-                                        Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[180px] text-center preserve-case">Available
-                                        Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Idle
-                                        Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Used
-                                        Space</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Total
-                                        Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Claimed
-                                        Reward</Table.HeadCell>
-                                    <Table.HeadCell className="w-[150px] text-center preserve-case">Create
-                                        Time</Table.HeadCell>
-                                </Table.Head>
-
-                                <Table.Body className="divide-y">
-                                    {host?.MinerInfoList
-                                        ? host.MinerInfoList
-                                            .sort((a, b) => naturalSort(a.Name, b.Name))
-                                            .map(renderTableRow)
-                                        : null}
-                                </Table.Body>
-                            </Table>
-                            <Modal
-                                mask={true}
-                                confirmLoading={true}
-                                footer={null}
-                                open={isModalVisible}
-                                onCancel={handleCancel}
-                                keyboard={true}
-                                onOk={handleCancel}
-                                maskClosable={true}
-                                styles={{
-                                    body: {backgroundColor: 'darkgray'},
-                                    header: {backgroundColor: 'darkgray'},
-                                    content: {backgroundColor: 'darkgray'},
-                                }}
-                                width="60%"
-                                style={{maxWidth: '1200px'}}
-                            >
-                                <MinerDescription miner={selectedMiner}></MinerDescription>
-                            </Modal>
+                    <div key={host?.Host} className="mb-8 p-4 rounded-lg shadow-md border-2 border-gray-900 bg-white dark:bg-gray-400">
+                        <h1 className="text-xl font-bold mb-4 text-blue-600 dark:text-white">
+                            <mark className="px-2 text-white bg-blue-900 rounded dark:bg-black">Host</mark>
+                            &nbsp;&nbsp; {host?.Host ? host.Host : "Unknown"}
+                        </h1>
+                        <div className="w-full space-y-4 sm:flex-row sm:justify-center sm:space-y-0 ">
+                            <div className="overflow-x-auto overflow-y-auto w-full">
+                                <Table
+                                    columns={columns}
+                                    dataSource={host?.MinerInfoList?.sort((a, b) => naturalSort(a.Name, b.Name))}
+                                    rowKey="SignatureAcc"
+                                    pagination={false}
+                                    className="bg-white dark:bg-gray-100 text-white"
+                                    rowClassName="hover:bg-gray-100 dark:hover:bg-gray-700"
+                                />
+                                <Modal
+                                    open={isModalVisible}
+                                    onCancel={handleCancel}
+                                    footer={null}
+                                    width="60%"
+                                    style={{maxWidth: '1200px'}}
+                                    className="bg-white dark:bg-gray-800"
+                                >
+                                    <MinerDescription miner={selectedMiner}/>
+                                </Modal>
+                            </div>
                         </div>
                     </div>
                 </div>

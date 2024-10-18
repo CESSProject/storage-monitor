@@ -1,10 +1,10 @@
 "use client";
 import React, {useEffect, useState} from 'react';
 import {MinusCircleOutlined, PlusOutlined} from '@ant-design/icons';
-import {Button, Card, Form, Input, InputNumber, Switch, Typography} from 'antd';
-import {toast} from "sonner";
+import {Button, Card, Form, Input, InputNumber, notification, Switch, Typography} from 'antd';
 import axios from "axios";
 import {env} from 'next-runtime-env'
+
 const API_URL = env('NEXT_PUBLIC_API_URL') || "http://localhost:13081"
 
 interface Hosts {
@@ -80,11 +80,14 @@ export default function Page() {
                 }
             });
             if (!response.data) {
+                notification.error({
+                    message: 'Server responded with an error. Please check the server status or contact support.',
+                });
                 throw new Error(
                     "Server responded with an error. Please check the server status or contact support."
                 );
             }
-            toast.success("Configuration saved!");
+            notification.success({message: 'Configuration saved!',})
             // return response.data;
         } catch (error) {
             console.error("Failed to fetch data:", error);
@@ -92,13 +95,9 @@ export default function Page() {
     };
 
     return (
-        <div style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            padding: '24px',
-            backgroundColor: '#f0f2f5'
-        }}>
-            <Card>
+        <div
+            className="max-w-[800px] mx-auto p-6">
+            <Card className={"dark:bg-gray-300 text-white bg-white text-black border-2"}>
                 <Title level={2} style={{textAlign: 'center', marginBottom: '24px'}}>
                     Watchdog Configuration
                 </Title>

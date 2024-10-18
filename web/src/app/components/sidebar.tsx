@@ -1,10 +1,9 @@
 "use client";
 
-import {Drawer, Sidebar} from "flowbite-react";
-import {useState} from "react";
-import {FaBarsStaggered} from "react-icons/fa6";
-import {HiChartPie,} from "react-icons/hi";
-import {HiComputerDesktop, HiSquaresPlus} from "react-icons/hi2";
+import { Drawer, Menu } from "antd";
+import { useState } from "react";
+import { MenuOutlined, PieChartOutlined, DesktopOutlined, AppstoreAddOutlined } from "@ant-design/icons";
+import Link from "next/link";
 
 export function LeftDrawer() {
     const [isOpen, setIsOpen] = useState(false);
@@ -14,42 +13,43 @@ export function LeftDrawer() {
     return (
         <>
             <Drawer
-                edge
-                open={isOpen}
+                placement="left"
                 onClose={handleClose}
-                position="left"
-                className="p-2 w-50"
-                theme={{root: {edge: "left-12"}}}
-            >
-                <Drawer.Header
-                    closeIcon={FaBarsStaggered}
-                    title="Storage Monitor"
-                    titleIcon={HiSquaresPlus}
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="cursor-pointer px-4 pt-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-                />
-                <Drawer.Items>
-                    <Sidebar
-                        aria-label="Sidebar"
-                        className="[&>div]:bg-transparent [&>div]:p-0"
+                open={isOpen}
+                width={250}
+                closeIcon={<MenuOutlined />}
+                className="bg-white dark:bg-gray-800 transition-colors duration-200"
+                title={
+                    <div
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
-                        <div className="flex h-full flex-col justify-between py-2">
-                            <div>
-                                <Sidebar.Items>
-                                    <Sidebar.ItemGroup>
-                                        <Sidebar.Item href="/dashboard" icon={HiChartPie}>
-                                            Dashboard
-                                        </Sidebar.Item>
-                                        <Sidebar.Item href="/system" icon={HiComputerDesktop}>
-                                            Configuration
-                                        </Sidebar.Item>
-                                    </Sidebar.ItemGroup>
-                                </Sidebar.Items>
-                            </div>
-                        </div>
-                    </Sidebar>
-                </Drawer.Items>
+                        <AppstoreAddOutlined /> Storage Monitor
+                    </div>
+                }
+            >
+                <Menu
+                    mode="inline"
+                    theme="light"
+                    className="h-full border-r-0 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    items={[
+                        {
+                            key: "dashboard",
+                            icon: <PieChartOutlined />,
+                            label: <Link href="/dashboard">Dashboard</Link>,
+                        },
+                        {
+                            key: "system",
+                            icon: <DesktopOutlined />,
+                            label: <Link href="/system">Configuration</Link>,
+                        },
+                    ]}
+                />
             </Drawer>
+            <MenuOutlined
+                onClick={() => setIsOpen(true)}
+                className="fixed top-4 left-4 cursor-pointer text-gray-700 dark:text-gray-300"
+            />
         </>
     );
 }
