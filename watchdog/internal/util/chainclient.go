@@ -15,7 +15,7 @@ func NewCessChainClient(rpcUrl []string) *CessChainClient {
 	chainClient, _ := cess.New(
 		context.Background(),
 		cess.ConnectRpcAddrs(rpcUrl),
-		cess.TransactionTimeout(time.Second*30),
+		cess.TransactionTimeout(time.Second*15),
 	)
 	return &CessChainClient{CessClient: chainClient}
 }
