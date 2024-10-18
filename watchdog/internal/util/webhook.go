@@ -3,10 +3,12 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -127,7 +129,11 @@ type WebhookConfig struct {
 func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err error) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(conf.Webhooks))
-	message := "CESS Information: " + " Alert Time: " + content.AlertTime + ", Host: " + content.HostIp + ", Miner Name: " + content.ContainerName + ", Description: " + content.Description
+	message, err := buildMessage(content)
+	if err != nil {
+		log.Logger.Warnf("Can not build alert message: %v", err)
+		return
+	}
 	for _, url := range conf.Webhooks {
 		var hook WebhookSender
 		switch GetWebhookType(url) {
@@ -169,4 +175,26 @@ func (conf *WebhookConfig) SendAlertToWebhook(content model.AlertContent) (err e
 		}
 	}
 	return nil
+}
+
+func buildMessage(content model.AlertContent) (string, error) {
+	if content.AlertTime == "" && content.HostIp == "" && content.ContainerName == "" && content.Description == "" {
+		return "", fmt.Errorf("no alert content provided")
+	}
+	var messageParts []string
+	messageParts = append(messageParts, "CESS Information")
+
+	if content.AlertTime != "" {
+		messageParts = append(messageParts, "Alert Time: "+content.AlertTime)
+	}
+	if content.HostIp != "" {
+		messageParts = append(messageParts, "Host: "+content.HostIp)
+	}
+	if content.ContainerName != "" {
+		messageParts = append(messageParts, "Miner Name: "+content.ContainerName)
+	}
+	if content.Description != "" {
+		messageParts = append(messageParts, "Description: "+content.Description)
+	}
+	return strings.Join(messageParts, ", "), nil
 }

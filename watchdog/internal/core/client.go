@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"github.com/CESSProject/cess-go-sdk/utils"
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/log"
@@ -54,7 +55,7 @@ func InitWatchdogClients(conf model.YamlConfig) error {
 			defer initClientsWG.Done()
 			dockerClient, err := NewClient(host)
 			httpClient := util.NewHTTPClient()
-			chainClient := util.NewCessChainClient([]string{constant.DefaultRpcUrl, constant.LocalRpcUrl})
+			chainClient := util.NewCessChainClient([]string{constant.LocalRpcUrl, constant.DefaultRpcUrl})
 			if dockerClient == nil {
 				return
 			}
@@ -114,7 +115,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	defer func() { cli.Updating = false }()
 	interval := conf.ScrapeInterval
 	ctx := context.Background()
-	containers, err := cli.Client.ListContainers(ctx)
+	containers, err := cli.Client.ListContainers(ctx, cli.Host)
 
 	if err != nil {
 		log.Logger.Errorf("Error when listing %s containers: %v", cli.Host, err)
@@ -149,7 +150,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
-			if err := cli.SetContainerData(ctx, container); err != nil {
+			if err := cli.getMinerRuntimeConfig(ctx, container, cli.Host); err != nil {
 				errChan <- err
 			}
 		}(container)
@@ -162,7 +163,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		setContainersStatsDataWG.Add(1)
 		go func(m *MinerInfo) {
 			defer setContainersStatsDataWG.Done()
-			if res, err := cli.SetContainerStats(ctx, m.CInfo.ID); err != nil {
+			if res, err := cli.SetContainerStats(ctx, m.CInfo.ID, cli.Host); err != nil {
 				errChan <- err
 			} else {
 				m.CInfo.CPUPercent = res.CPUPercent
@@ -193,64 +194,70 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 func sleepAFewSeconds() {
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
-	sleepDuration := r.Intn(2) + 1
+	sleepDuration := r.Intn(10) + 1
 	time.Sleep(time.Duration(sleepDuration) * time.Second)
 }
 
-func (cli *WatchdogClient) SetContainerData(ctx context.Context, cinfo model.Container) error {
-	res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf)
-	if err != nil {
-		log.Logger.Errorf("%s read config from container path: %s failed in host: %s", cinfo.Name, constant.MinerConfPath, cli.Host)
-		return err
-	}
-
-	// res:
-	//[1 0 0 0 0 0 1 179 78 97 109 101 58 32 109 105
-	//110 101 114 49 13 10 80 111 114 116 58 32 49 53
-	//48 48 49 13 10 69 97 114 110 105 110 103 115 65
-	//114 46 98 111 111 116 45 109 105 110 101 114 45
-	//100 101 118 110 101 116 46 99 101 115 115 46 99]
-
-	// 1-8 byte: 1 0 0 0 0 0 1 179
-
-	// The First Byte：stream dataType. value: 0x01 stdout，value: 0x02 stderr
-
-	// The second to fourth bytes are 0 0 0: Reserved and not used
-
-	// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
-	//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
-	conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
-	if err != nil {
-		log.Logger.Errorf("Failed to parse storage node config file for container %s: %v", cinfo.Name, err)
-		return err
-	}
-
-	key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
-	if err != nil {
-		log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
-		return err
-	}
-
-	acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
-	if err != nil {
-		log.Logger.Errorf("Failed to encode public key as Cess account for container %s: %v", cinfo.Name, err)
-		return err
-	}
-	cli.mutex.Lock()
-	defer cli.mutex.Unlock()
-	if miner, ok := cli.MinerInfoMap[cinfo.Name]; ok {
-		miner.Name = conf.Name
-		miner.SignatureAcc = acc
-		miner.Conf = conf
-		miner.CInfo = cinfo
-	} else {
-		cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
-			Name:         conf.Name,
-			SignatureAcc: acc,
-			CInfo:        cinfo,
-			Conf:         conf,
-			MinerStat:    model.MinerStat{},
+func (cli *WatchdogClient) getMinerRuntimeConfig(ctx context.Context, cinfo model.Container, hostIp string) error {
+	_, ok := cli.MinerInfoMap[cinfo.Name]
+	if !ok {
+		res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf, cli.Host)
+		if err != nil {
+			log.Logger.Errorf("%s read config from container path: %s failed in host: %s", cinfo.Name, constant.MinerConfPath, cli.Host)
+			return err
 		}
+
+		// res:
+		//[1 0 0 0 0 0 1 179 78 97 109 101 58 32 109 105
+		//110 101 114 49 13 10 80 111 114 116 58 32 49 53
+		//48 48 49 13 10 69 97 114 110 105 110 103 115 65
+		//114 46 98 111 111 116 45 109 105 110 101 114 45
+		//100 101 118 110 101 116 46 99 101 115 115 46 99]
+
+		// 1-8 byte: 1 0 0 0 0 0 1 179
+
+		// The First Byte：stream dataType. value: 0x01 stdout，value: 0x02 stderr
+
+		// The second to fourth bytes are 0 0 0: Reserved and not used
+
+		// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
+		//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
+		conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
+		if err != nil {
+			go NormalAlert(hostIp, fmt.Sprintf("Please check miner: %s disk status", cinfo.Name))
+			log.Logger.Errorf("Failed to parse storage node config file for container %s: %v", cinfo.Name, err)
+			return err
+		}
+
+		key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
+		if err != nil {
+			log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
+			return err
+		}
+
+		acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
+		if err != nil {
+			log.Logger.Errorf("Failed to encode public key as Cess account for container %s: %v", cinfo.Name, err)
+			return err
+		}
+		cli.mutex.Lock()
+		defer cli.mutex.Unlock()
+		if miner, ok := cli.MinerInfoMap[cinfo.Name]; ok {
+			miner.Name = conf.Name
+			miner.SignatureAcc = acc
+			miner.Conf = conf
+			miner.CInfo = cinfo
+		} else {
+			cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
+				Name:         conf.Name,
+				SignatureAcc: acc,
+				CInfo:        cinfo,
+				Conf:         conf,
+				MinerStat:    model.MinerStat{},
+			}
+		}
+		return nil
+	} else {
+		return nil
 	}
-	return nil
 }
