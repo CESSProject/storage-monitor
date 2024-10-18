@@ -1,7 +1,6 @@
 import React, {Fragment, useState} from "react";
 import {Badge, Modal, Table} from "antd";
 import MinerDescription from "@/app/components/description";
-import {CheckCircleOutlined, CloseCircleOutlined} from "@ant-design/icons";
 import {unixTimestampToDateFormat} from "@/utils";
 
 export interface HostModel {
@@ -152,9 +151,9 @@ export default function Miners({host}: HostProp) {
             align: "center" as const,
             render: (status: string) => (
                 status === "positive" ? (
-                    <Badge status="success" text="Running" icon={<CheckCircleOutlined/>}/>
+                    <Badge status="success" text="Running"/>
                 ) : (
-                    <Badge status="error" text="Stop" icon={<CloseCircleOutlined/>}/>
+                    <Badge status="error" text="Stop"/>
                 )
             ),
         },
@@ -202,7 +201,8 @@ export default function Miners({host}: HostProp) {
         <Fragment>
             <section className="pl-12 pr-4 pt-0 bg-white dark:bg-gray-900">
                 <div className="py-8 px-4 mx-auto max-w-full">
-                    <div key={host?.Host} className="mb-8 p-4 rounded-lg shadow-md border-2 border-gray-900 bg-white dark:bg-gray-400">
+                    <div key={host?.Host}
+                         className="mb-8 p-4 rounded-lg shadow-md border-2 border-gray-900 bg-white dark:bg-gray-400">
                         <h1 className="text-xl font-bold mb-4 text-blue-600 dark:text-white">
                             <mark className="px-2 text-white bg-blue-900 rounded dark:bg-black">Host</mark>
                             &nbsp;&nbsp; {host?.Host ? host.Host : "Unknown"}
