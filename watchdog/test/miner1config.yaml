@@ -1,7 +1,7 @@
 Name: miner1
 Port: 15001
 EarningsAcc: cXjmhVMVak1mFG3jaK2Nj9KGxHAo41vH5uZzCS7gKV9g5xxxa
-StakingAcc: cXhLrzUA1BVu9HmDFZKQWLKDJvvFk4fmy2JTvAGNvD4qN4ura
+StakingAcc: xxxxxxxxxxxx
 Mnemonic: profit upset peasant git table lawn usual insect paper garbage awake edit
 Rpc:
   - 'ws://999.999.999.999:9999/'

@@ -1,7 +1,7 @@
 Name: miner2
 Port: 15002
 EarningsAcc: cXf7eCg6CXvjTf6bpw1CJ24q8sk8jM2cAA1beQRH9ApktMCcY
-StakingAcc: cXjNKYNWwGg4cCzjgeQLJxEjhebr2Hd5SAibhLdFiA1hWnggC
+StakingAcc: xxxxxxxxxxxx
 Mnemonic: man maid mine proud drip arm century Sisual shift home search tuna
 Rpc:
   - 'ws://999.999.999.999:9999/'
