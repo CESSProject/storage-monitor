@@ -6,7 +6,7 @@ ENV GOPROXY=${go_proxy}
 WORKDIR /opt/cess/watchdog
 
 COPY . .
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' -gcflags '-N -l' -o watchdog main.go
+RUN GOOS=linux CGO_ENABLED=0 go build -ldflags '-w -s' -gcflags '-N -l' -o watchdog main.go
 
 FROM alpine:3.18 AS runner
 WORKDIR /opt/cess/watchdog
