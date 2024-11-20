@@ -142,15 +142,15 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 			runningMiners[v.Name] = true
 		}
 		for key := range cli.MinerInfoMap {
-			// delete un-exist miner
 			if !runningMiners[key] {
+				log.Logger.Infof("Miner %s on host: %v has been stopped or removed, delete it from task", key, cli.Host)
 				delete(cli.MinerInfoMap, key)
 			}
 		}
 		setContainersDataWG.Add(1)
 		go func(container model.Container) {
 			defer setContainersDataWG.Done()
-			if err := cli.getMinerRuntimeConfig(ctx, container, cli.Host); err != nil {
+			if err := cli.setMinerInfoMapItem(ctx, container, cli.Host); err != nil {
 				errChan <- err
 			}
 		}(container)
@@ -175,14 +175,17 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	setContainersStatsDataWG.Wait()
 
 	// set miner's info on chain
-	// qps might be high when use goroutine to request scan server,
 	for _, miner := range cli.MinerInfoMap {
+		// scan server can be overloaded when request frequently
 		sleepAFewSeconds()
 		if minerStat, err := cli.SetChainData(miner.SignatureAcc, miner.Conf.Rpc, miner.Conf.Mnemonic, interval, miner.Name, miner.CInfo.Created); err != nil {
 			errChan <- err
 		} else {
-			miner.MinerStat = minerStat
-			cli.MinerInfoMap[miner.Name].MinerStat = miner.MinerStat
+			if _, exists := cli.MinerInfoMap[miner.Name]; exists {
+				cli.MinerInfoMap[miner.Name].MinerStat = minerStat
+			} else {
+				log.Logger.Error("Miner name does not match with conf file, please check your mineradm config file")
+			}
 		}
 	}
 
@@ -198,66 +201,61 @@ func sleepAFewSeconds() {
 	time.Sleep(time.Duration(sleepDuration) * time.Second)
 }
 
-func (cli *WatchdogClient) getMinerRuntimeConfig(ctx context.Context, cinfo model.Container, hostIp string) error {
-	_, ok := cli.MinerInfoMap[cinfo.Name]
-	if !ok {
-		res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf, cli.Host)
-		if err != nil {
-			log.Logger.Errorf("%s read config from container path: %s failed in host: %s", cinfo.Name, constant.MinerConfPath, cli.Host)
-			return err
-		}
-
-		// res:
-		//[1 0 0 0 0 0 1 179 78 97 109 101 58 32 109 105
-		//110 101 114 49 13 10 80 111 114 116 58 32 49 53
-		//48 48 49 13 10 69 97 114 110 105 110 103 115 65
-		//114 46 98 111 111 116 45 109 105 110 101 114 45
-		//100 101 118 110 101 116 46 99 101 115 115 46 99]
-
-		// 1-8 byte: 1 0 0 0 0 0 1 179
-
-		// The First Byte：stream dataType. value: 0x01 stdout，value: 0x02 stderr
-
-		// The second to fourth bytes are 0 0 0: Reserved and not used
-
-		// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
-		//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
-		conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
-		if err != nil {
-			go NormalAlert(hostIp, fmt.Sprintf("Please check miner: %s disk status", cinfo.Name))
-			log.Logger.Errorf("Failed to parse storage node config file for container %s: %v", cinfo.Name, err)
-			return err
-		}
-
-		key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
-		if err != nil {
-			log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
-			return err
-		}
-
-		acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
-		if err != nil {
-			log.Logger.Errorf("Failed to encode public key as Cess account for container %s: %v", cinfo.Name, err)
-			return err
-		}
-		cli.mutex.Lock()
-		defer cli.mutex.Unlock()
-		if miner, ok := cli.MinerInfoMap[cinfo.Name]; ok {
-			miner.Name = conf.Name
-			miner.SignatureAcc = acc
-			miner.Conf = conf
-			miner.CInfo = cinfo
-		} else {
-			cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
-				Name:         conf.Name,
-				SignatureAcc: acc,
-				CInfo:        cinfo,
-				Conf:         conf,
-				MinerStat:    model.MinerStat{},
-			}
-		}
-		return nil
-	} else {
+func (cli *WatchdogClient) setMinerInfoMapItem(ctx context.Context, cinfo model.Container, hostIp string) error {
+	if _, ok := cli.MinerInfoMap[cinfo.Name]; ok {
 		return nil
 	}
+
+	res, err := cli.ExeCommand(ctx, cinfo.ID, exeConf, cli.Host)
+	if err != nil {
+		log.Logger.Errorf("%s read config from container path: %s failed in host: %s", cinfo.Name, constant.MinerConfPath, cli.Host)
+		return err
+	}
+
+	// res:
+	//[1 0 0 0 0 0 1 179 78 97 109 101 58 32 109 105
+	//110 101 114 49 13 10 80 111 114 116 58 32 49 53
+	//48 48 49 13 10 69 97 114 110 105 110 103 115 65
+	//114 46 98 111 111 116 45 109 105 110 101 114 45
+	//100 101 118 110 101 116 46 99 101 115 115 46 99]
+
+	// 1-8 byte: 1 0 0 0 0 0 1 179
+
+	// The First Byte：stream dataType. value: 0x01 stdout，value: 0x02 stderr
+
+	// The second to fourth bytes are 0 0 0: Reserved and not used
+
+	// The fifth to eighth bytes are 0 0 1 179: they indicate the length of the following data block.
+	//The length here is a 32-bit integer with a value of 0x000001B3, which is 435 in decimal.
+	conf, err := util.ParseMinerConfigFile(res[8:]) // delete 0-7
+	if err != nil {
+		go NormalAlert(hostIp, fmt.Sprintf("Please check miner: %s disk status", cinfo.Name))
+		log.Logger.Errorf("Failed to parse storage node config file for container %s: %v", cinfo.Name, err)
+		return err
+	}
+
+	key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
+	if err != nil {
+		log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
+		return err
+	}
+
+	acc, err := utils.EncodePublicKeyAsCessAccount(key.PublicKey)
+	if err != nil {
+		log.Logger.Errorf("Failed to encode public key as Cess account for container %s: %v", cinfo.Name, err)
+		return err
+	}
+
+	cli.mutex.Lock()
+	defer cli.mutex.Unlock()
+
+	cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
+		Name:         conf.Name,
+		SignatureAcc: acc,
+		CInfo:        cinfo,
+		Conf:         conf,
+		MinerStat:    model.MinerStat{},
+	}
+
+	return nil
 }
