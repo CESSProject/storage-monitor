@@ -139,10 +139,10 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 		}
 		runningMiners := make(map[string]bool)
 		for _, v := range containers {
-			runningMiners[v.Name] = true
+			runningMiners[v.ID] = true
 		}
-		for key := range cli.MinerInfoMap {
-			if !runningMiners[key] {
+		for key, value := range cli.MinerInfoMap {
+			if !runningMiners[value.CInfo.ID] {
 				log.Logger.Infof("Miner %s on host: %v has been stopped or removed, delete it from task", key, cli.Host)
 				delete(cli.MinerInfoMap, key)
 			}
