@@ -1,8 +1,5 @@
 FROM golang:1.20-alpine3.18 AS builder
 
-ARG go_proxy
-ENV GOPROXY=${go_proxy}
-
 WORKDIR /opt/cess/watchdog
 
 COPY . .
