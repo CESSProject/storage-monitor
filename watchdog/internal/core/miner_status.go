@@ -7,6 +7,7 @@ import (
 	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
 	"github.com/CESSProject/watchdog/internal/util"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"strconv"
 	"sync"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, mnemonic string, interval int, miner string, created int64) (model.MinerStat, error) {
+func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner string, created int64) (model.MinerStat, error) {
 	var stat model.MinerStat
 	hostIP := util.GetLocalIP()
 	if hostIP == "" {
@@ -27,7 +28,7 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, m
 	}
 
 	chainInfo, err := cli.CessChainClient.CessClient.QueryMinerItems(publicKey, -1)
-	if err != nil && chainInfo.State == nil {
+	if err != nil {
 		return model.MinerStat{}, errors.Wrap(err, "error when query miner stat from chain")
 	}
 
@@ -52,8 +53,8 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, rpcAddr []string, m
 		log.Logger.Errorf("%s %s failed to query reward from chain", hostIP, miner)
 		return stat, errors.Wrap(err, "failed to query reward from chain")
 	}
-	stat.TotalReward = util.BigNumConversion(reward.TotalReward)
-	stat.RewardIssued = util.BigNumConversion(reward.RewardIssued)
+	stat.TotalReward = util.BigNumConversion(types.U128(reward.TotalReward))
+	stat.RewardIssued = util.BigNumConversion(types.U128(reward.RewardIssued))
 
 	latestBlockNum := int(latestBlockNumberUint32)
 	blockUncheckNum := interval / constant.GenBlockInterval

@@ -196,7 +196,7 @@ func getListByCondition(hostIp string) ([]HostInfoVO, error) {
 					MinerInfoList: getMinersListByClientInfo(client.MinerInfoMap),
 				}
 				for minerName := range vo.MinerInfoList {
-					vo.MinerInfoList[minerName].Conf.Mnemonic = ""
+					vo.MinerInfoList[minerName].Conf.Chain.Mnemonic = ""
 				}
 				res = append(res, vo)
 			} else {
@@ -214,7 +214,7 @@ func getListByCondition(hostIp string) ([]HostInfoVO, error) {
 					MinerInfoList: getMinersListByClientInfo(core.Clients[k].MinerInfoMap),
 				}
 				for minerName := range vo.MinerInfoList {
-					vo.MinerInfoList[minerName].Conf.Mnemonic = ""
+					vo.MinerInfoList[minerName].Conf.Chain.Mnemonic = ""
 				}
 				res = append(res, vo)
 			}
@@ -229,7 +229,7 @@ func getListByCondition(hostIp string) ([]HostInfoVO, error) {
 func getMinersListByClientInfo(minerMap map[string]*core.MinerInfo) []core.MinerInfo {
 	var minerInfoArray []core.MinerInfo
 	for _, minerInfo := range minerMap {
-		minerInfo.Conf.Mnemonic = "-"
+		minerInfo.Conf.Chain.Mnemonic = "-"
 		minerInfoArray = append(minerInfoArray, *minerInfo)
 	}
 	return minerInfoArray

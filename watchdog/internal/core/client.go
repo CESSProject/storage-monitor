@@ -178,7 +178,7 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	for _, miner := range cli.MinerInfoMap {
 		// scan server can be overloaded when request frequently
 		sleepAFewSeconds()
-		if minerStat, err := cli.SetChainData(miner.SignatureAcc, miner.Conf.Rpc, miner.Conf.Mnemonic, interval, miner.Name, miner.CInfo.Created); err != nil {
+		if minerStat, err := cli.SetChainData(miner.SignatureAcc, interval, miner.Name, miner.CInfo.Created); err != nil {
 			errChan <- err
 		} else {
 			if _, exists := cli.MinerInfoMap[miner.Name]; exists {
@@ -234,7 +234,7 @@ func (cli *WatchdogClient) setMinerInfoMapItem(ctx context.Context, cinfo model.
 		return err
 	}
 
-	key, err := signature.KeyringPairFromSecret(conf.Mnemonic, 0)
+	key, err := signature.KeyringPairFromSecret(conf.Chain.Mnemonic, 0)
 	if err != nil {
 		log.Logger.Errorf("Failed to generate keyring pair for container %s: %v", cinfo.Name, err)
 		return err
@@ -250,7 +250,7 @@ func (cli *WatchdogClient) setMinerInfoMapItem(ctx context.Context, cinfo model.
 	defer cli.mutex.Unlock()
 
 	cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
-		Name:         conf.Name,
+		Name:         acc,
 		SignatureAcc: acc,
 		CInfo:        cinfo,
 		Conf:         conf,

@@ -38,7 +38,6 @@ type ContainerStat struct {
 }
 
 type MinerStat struct {
-	PeerId           string           `json:"peer_id"`
 	Collaterals      string           `json:"collaterals"`
 	Debt             string           `json:"debt"`
 	Status           string           `json:"status"`            // positive, exit, frozen, unready(register on chain but no get a tag from tee)
@@ -52,17 +51,25 @@ type MinerStat struct {
 }
 
 type MinerConfigFile struct {
-	Name        string   `name:"Name" toml:"Name" yaml:"Name"`
-	Port        int      `name:"Port" toml:"Port" yaml:"Port"`
-	EarningsAcc string   `name:"EarningsAcc" toml:"EarningsAcc" yaml:"EarningsAcc"`
-	StakingAcc  string   `name:"StakingAcc" toml:"StakingAcc" yaml:"StakingAcc"`
-	Mnemonic    string   `name:"Mnemonic" toml:"Mnemonic" yaml:"Mnemonic"`
-	Rpc         []string `name:"Rpc" toml:"Rpc" yaml:"Rpc"`
-	UseSpace    int      `name:"UseSpace" toml:"UseSpace" yaml:"UseSpace"`
-	Workspace   string   `name:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	UseCpu      int      `name:"UseCpu" toml:"UseCpu" yaml:"UseCpu"`
-	TeeList     []string `name:"TeeList" toml:"TeeList" yaml:"TeeList"`
-	Boot        []string `name:"Boot" toml:"Boot" yaml:"Boot"`
+	App   AppConfig   `yaml:"app"`
+	Chain ChainConfig `yaml:"chain"`
+}
+
+type AppConfig struct {
+	Workspace   string `yaml:"workspace"`
+	Port        int    `yaml:"port"`
+	MaxUseSpace int    `yaml:"maxusespace"`
+	Cores       int    `yaml:"cores"`
+	APIEndpoint string `yaml:"apiendpoint"`
+}
+
+type ChainConfig struct {
+	Mnemonic    string   `yaml:"mnemonic"`
+	StakingAcc  string   `yaml:"stakingacc"`
+	EarningsAcc string   `yaml:"earningsacc"`
+	RPCs        []string `yaml:"rpcs"`
+	TEEs        []string `yaml:"tees"`
+	Timeout     int      `yaml:"timeout"`
 }
 
 type YamlConfig struct {

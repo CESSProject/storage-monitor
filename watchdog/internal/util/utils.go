@@ -6,7 +6,6 @@ import (
 	"github.com/CESSProject/watchdog/constant"
 	"github.com/CESSProject/watchdog/internal/log"
 	"github.com/CESSProject/watchdog/internal/model"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"gopkg.in/yaml.v3"
 	"math/big"
@@ -26,14 +25,13 @@ func ParseMinerConfigFile(data []byte) (model.MinerConfigFile, error) {
 
 func TransferMinerInfoToMinerStat(info chain.MinerInfo) (model.MinerStat, error) {
 	var minerStat = model.MinerStat{}
-	minerStat.PeerId = base58.Encode([]byte(string(info.PeerId[:])))
-	minerStat.Collaterals = BigNumConversion(info.Collaterals)
-	minerStat.Debt = BigNumConversion(info.Debt)
+	minerStat.Collaterals = BigNumConversion(types.U128(info.Collaterals))
+	minerStat.Debt = BigNumConversion(types.U128(info.Debt))
 	minerStat.Status = string(info.State)
-	minerStat.DeclarationSpace = StorageSpaceUnitConversion(info.DeclarationSpace)
-	minerStat.IdleSpace = StorageSpaceUnitConversion(info.IdleSpace)
-	minerStat.ServiceSpace = StorageSpaceUnitConversion(info.ServiceSpace)
-	minerStat.LockSpace = StorageSpaceUnitConversion(info.LockSpace)
+	minerStat.DeclarationSpace = StorageSpaceUnitConversion(types.U128(info.DeclarationSpace))
+	minerStat.IdleSpace = StorageSpaceUnitConversion(types.U128(info.IdleSpace))
+	minerStat.ServiceSpace = StorageSpaceUnitConversion(types.U128(info.ServiceSpace))
+	minerStat.LockSpace = StorageSpaceUnitConversion(types.U128(info.LockSpace))
 	minerStat.LatestPunishInfo = model.PunishSminerData{}
 	return minerStat, nil
 }
