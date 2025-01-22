@@ -8,7 +8,7 @@ import (
 )
 
 type CessChainClient struct {
-	CessClient *chain.ChainClient
+	CessClient chain.Chainer
 }
 
 func NewCessChainClient(rpcUrl []string) *CessChainClient {
