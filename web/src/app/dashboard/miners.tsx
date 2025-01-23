@@ -13,18 +13,27 @@ interface HostProp {
 }
 
 interface ConfModel {
-    Name: string;
-    Port: number;
-    EarningsAcc: string;
-    StakingAcc: string;
-    Mnemonic: string;
-    Rpc: string[];
-    UseSpace: number;
-    Workspace: string;
-    UseCpu: number;
-    TeeList: string[];
-    Boot: string[];
+    App: AppConfig;
+    Chain: ChainConfig;
 }
+
+interface AppConfig {
+    Workspace: string;
+    Port: number;
+    MaxUseSpace: number;
+    Cores: number;
+    APIEndpoint: string;
+}
+
+interface ChainConfig {
+    Mnemonic: string;
+    StakingAcc: string;
+    EarningsAcc: string;
+    RPCs: string[];
+    TEEs: string[];
+    Timeout: number;
+}
+
 
 // CInfo container info
 interface CInfoModel {

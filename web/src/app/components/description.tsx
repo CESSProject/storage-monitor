@@ -4,12 +4,6 @@ import {MinerInfoListModel} from "@/app/dashboard/miners";
 
 const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): DescriptionsProps['items'] => [
     {
-        label: 'Miner Name',
-        children: minerInfo.Name,
-        contentStyle: {fontSize: "16px", color: 'black', fontWeight: "bold"},
-        style: {borderBottom: '2px solid black',}
-    },
-    {
         label: 'Signature Account',
         children: minerInfo.SignatureAcc,
         contentStyle: {fontSize: "16px", color: 'black', fontWeight: "bold"},
@@ -23,28 +17,25 @@ const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): Description
         children: (
             <>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Name: </strong>{minerInfo.Conf.Name}</p>
+                    className="text-sm font-bold text-gray-900 dark:text-black">Port: </strong>{minerInfo.Conf.App.Port}</p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Port: </strong>{minerInfo.Conf.Port}</p>
-                <Divider></Divider>
-                <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">EarningsAcc: </strong>{minerInfo.Conf.EarningsAcc}
+                    className="text-sm font-bold text-gray-900 dark:text-black">EarningsAcc: </strong>{minerInfo.Conf.Chain.EarningsAcc}
                 </p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">StakingAcc: </strong>{minerInfo.Conf.StakingAcc}
+                    className="text-sm font-bold text-gray-900 dark:text-black">StakingAcc: </strong>{minerInfo.Conf.Chain.StakingAcc}
                 </p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Rpc: </strong>{minerInfo.Conf.Rpc.join(', ')}</p>
+                    className="text-sm font-bold text-gray-900 dark:text-black">Rpc: </strong>{minerInfo.Conf.Chain.RPCs.join(", ")}</p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Use Space: </strong>{minerInfo.Conf.UseSpace}GiB
+                    className="text-sm font-bold text-gray-900 dark:text-black">Use Space: </strong>{minerInfo.Conf.App.MaxUseSpace}GiB
                 </p>
                 <Divider></Divider>
                 <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">Use Core: </strong>{minerInfo.Conf.UseCpu}
+                    className="text-sm font-bold text-gray-900 dark:text-black">Use Core: </strong>{minerInfo.Conf.App.Cores}
                 </p>
             </>
         ),
@@ -95,11 +86,6 @@ const minerInfoToDescriptionItems = (minerInfo: MinerInfoListModel): Description
         style: {borderBottom: '2px solid black', borderRight: '2px solid black', borderLeft: '2px solid black'},
         children: (
             <>
-                <p><strong
-                    className="text-sm font-bold text-gray-900 dark:text-black">P2P Peer
-                    ID: </strong>{minerInfo.MinerStat.peer_id}
-                </p>
-                <Divider></Divider>
                 <p><strong
                     className="text-sm font-bold text-gray-900 dark:text-black">Status: </strong>{minerInfo.MinerStat.status}
                 </p>
