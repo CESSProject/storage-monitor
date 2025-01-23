@@ -6,7 +6,6 @@ toolchain go1.22.3
 
 require (
 	github.com/CESSProject/cess-go-sdk v0.7.1-0.20250121091655-a20091f02829
-	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.2.1
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/gin-gonic/gin v1.10.0
@@ -22,6 +21,7 @@ require (
 require (
 	github.com/AstaFrode/go-substrate-rpc-client/v4 v4.2.4 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
