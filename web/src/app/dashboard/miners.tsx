@@ -70,7 +70,6 @@ interface PunishmentModel {
 }
 
 export interface MinerInfoListModel {
-    Name: string;
     SignatureAcc: string;
     Conf: ConfModel;
     CInfo: CInfoModel;
@@ -119,16 +118,6 @@ export default function Miners({host}: HostProp) {
     };
 
     const columns = [
-        {
-            title: "Name",
-            dataIndex: "Name",
-            key: "Name",
-            align: "center" as const,
-            render: (text: string, record: MinerInfoListModel) => (
-                <span className="text-blue-600 dark:text-blue-500 cursor-pointer"
-                      onClick={() => showModal(record)}>{text}</span>
-            ),
-        },
         {
             title: () => <div style={{textAlign: 'left'}}>Signature Account</div>,
             dataIndex: "SignatureAcc",
@@ -211,7 +200,7 @@ export default function Miners({host}: HostProp) {
                             <div className="overflow-x-auto overflow-y-auto w-full">
                                 <Table
                                     columns={columns}
-                                    dataSource={host?.MinerInfoList?.sort((a, b) => naturalSort(a.Name, b.Name))}
+                                    dataSource={host?.MinerInfoList?.sort((a, b) => naturalSort(a.SignatureAcc, b.SignatureAcc))}
                                     rowKey="SignatureAcc"
                                     pagination={false}
                                     className="bg-white dark:bg-gray-100 text-white"
