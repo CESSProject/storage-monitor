@@ -37,7 +37,6 @@ type WatchdogClient struct {
 var Clients = map[string]*WatchdogClient{} // key: hostIP
 
 type MinerInfo struct {
-	Name         string
 	SignatureAcc string
 	Conf         model.MinerConfigFile
 	CInfo        model.Container
@@ -178,11 +177,11 @@ func (cli *WatchdogClient) start(conf model.YamlConfig) error {
 	for _, miner := range cli.MinerInfoMap {
 		// scan server can be overloaded when request frequently
 		sleepAFewSeconds()
-		if minerStat, err := cli.SetChainData(miner.SignatureAcc, interval, miner.Name, miner.CInfo.Created); err != nil {
+		if minerStat, err := cli.SetChainData(miner.SignatureAcc, interval, miner.SignatureAcc, miner.CInfo.Created); err != nil {
 			errChan <- err
 		} else {
-			if _, exists := cli.MinerInfoMap[miner.Name]; exists {
-				cli.MinerInfoMap[miner.Name].MinerStat = minerStat
+			if _, exists := cli.MinerInfoMap[miner.SignatureAcc]; exists {
+				cli.MinerInfoMap[miner.SignatureAcc].MinerStat = minerStat
 			} else {
 				log.Logger.Error("Miner name does not match with conf file, please check your mineradm config file")
 			}
@@ -249,8 +248,7 @@ func (cli *WatchdogClient) setMinerInfoMapItem(ctx context.Context, cinfo model.
 	cli.mutex.Lock()
 	defer cli.mutex.Unlock()
 
-	cli.MinerInfoMap[cinfo.Name] = &MinerInfo{
-		Name:         acc,
+	cli.MinerInfoMap[acc] = &MinerInfo{
 		SignatureAcc: acc,
 		CInfo:        cinfo,
 		Conf:         conf,

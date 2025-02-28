@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner string, created int64) (model.MinerStat, error) {
+func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, minerSignatureAcc string, created int64) (model.MinerStat, error) {
 	var stat model.MinerStat
 	hostIP := cli.Host
 	if hostIP == "" {
@@ -29,28 +29,28 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner
 
 	chainInfo, err := cli.CessChainClient.CessClient.QueryMinerItems(publicKey, -1)
 	if err != nil {
-		return model.MinerStat{}, errors.Wrap(err, "error when query miner stat from chain")
+		return model.MinerStat{}, errors.Wrap(err, "error when query minerSignatureAcc stat from chain")
 	}
 
 	stat, err = util.TransferMinerInfoToMinerStat(chainInfo)
 	if err != nil {
-		log.Logger.Errorf("%s %s failed to transfer object format", hostIP, miner)
+		log.Logger.Errorf("%s %s failed to transfer object format", hostIP, minerSignatureAcc)
 		return model.MinerStat{}, err
 	}
 
 	latestBlockNumberUint32, err := cli.CessChainClient.CessClient.QueryBlockNumber("")
 	if err != nil {
-		log.Logger.Errorf("%s %s failed to query latest block latestBlockNumberUint32", hostIP, miner)
+		log.Logger.Errorf("%s %s failed to query latest block latestBlockNumberUint32", hostIP, minerSignatureAcc)
 		return stat, errors.Wrap(err, "failed to query latest block latestBlockNumberUint32")
 	}
 
 	if stat.Status != "positive" && time.Now().Unix()-created > 3600 {
-		go alert(hostIP, miner, constant.MinerStatus, signatureAcc, "", latestBlockNumberUint32)
+		go alert(hostIP, minerSignatureAcc, constant.MinerStatus, signatureAcc, "", latestBlockNumberUint32)
 	}
 
 	reward, err := cli.CessChainClient.CessClient.QueryRewardMap(publicKey, -1)
 	if err != nil {
-		log.Logger.Errorf("%s %s failed to query reward from chain", hostIP, miner)
+		log.Logger.Errorf("%s %s failed to query reward from chain", hostIP, minerSignatureAcc)
 		return stat, errors.Wrap(err, "failed to query reward from chain")
 	}
 	stat.TotalReward = util.BigNumConversion(types.U128(reward.TotalReward))
@@ -65,14 +65,14 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner
 
 	err = cli.HTTPClient.Get(scanApiUrl, &response)
 	if err != nil {
-		log.Logger.Errorf("%s %s failed to query punishment from scan api", hostIP, miner)
+		log.Logger.Errorf("%s %s failed to query punishment from scan api", hostIP, minerSignatureAcc)
 		return stat, err
 	}
 	if response.Data.Count > 0 {
 		scanApiUrl = fmt.Sprintf("%s/sminer/punishment?Acc=%s&pageindex=%d&pagesize=1", constant.ScanApiUrl, signatureAcc, response.Data.Count)
 		err = cli.HTTPClient.Get(scanApiUrl, &response)
 		if err != nil {
-			log.Logger.Errorf("%s %s failed to query punishment from scan api server", hostIP, miner)
+			log.Logger.Errorf("%s %s failed to query punishment from scan api server", hostIP, minerSignatureAcc)
 			return stat, err
 		}
 		stat.LatestPunishInfo = response.Data.Content[0]
@@ -81,7 +81,7 @@ func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner
 			if stat.LatestPunishInfo.Type == 1 {
 				alertType = constant.NoSubmitSvcProof
 			}
-			go alert(hostIP, miner, alertType, signatureAcc, stat.LatestPunishInfo.ExtrinsicHash, stat.LatestPunishInfo.BlockId)
+			go alert(hostIP, minerSignatureAcc, alertType, signatureAcc, stat.LatestPunishInfo.ExtrinsicHash, stat.LatestPunishInfo.BlockId)
 		}
 	}
 	return stat, nil
