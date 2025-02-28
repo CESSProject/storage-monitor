@@ -17,7 +17,7 @@ import (
 
 func (cli *WatchdogClient) SetChainData(signatureAcc string, interval int, miner string, created int64) (model.MinerStat, error) {
 	var stat model.MinerStat
-	hostIP := util.GetLocalIP()
+	hostIP := cli.Host
 	if hostIP == "" {
 		hostIP = "127.0.0.1"
 	}
