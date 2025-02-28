@@ -121,7 +121,7 @@ func alert(hostIP string, miner string, alertType string, signatureAcc string, e
 		Description:   alertInfo.description,
 		DetailUrl:     alertURL,
 	}
-	log.Logger.Warnf("Triggered alert at block: %d, Alert content: %v", int(blockId), content)
+	log.Logger.Warnf("Alert at block: %d, Detail: %v", int(blockId), content)
 	if !CustomConfig.Alert.Enable {
 		return
 	}
